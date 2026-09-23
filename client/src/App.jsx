@@ -1,6 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
+import Home from "./pages/public/Home";
+import Login from "./pages/public/Login";
+import Register from "./pages/public/Register";
 
 function Placeholder({ title }) {
   return (
@@ -16,10 +19,10 @@ export default function App() {
     <Routes>
       {/* Public pages: Navbar + content + Footer */}
       <Route element={<MainLayout />}>
-        <Route path="/" element={<Placeholder title="Home" />} />
+        <Route path="/" element={<Home />} />
         <Route path="/about" element={<Placeholder title="About" />} />
-        <Route path="/login" element={<Placeholder title="Login" />} />
-        <Route path="/register" element={<Placeholder title="Register" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Route>
 
       {/* Logged-in pages: Navbar + Sidebar + content */}
