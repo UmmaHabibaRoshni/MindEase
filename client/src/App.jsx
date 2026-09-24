@@ -1,6 +1,14 @@
+
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
+import Home from "./pages/Home";
+import SeekerDashboard from "./pages/dashboards/SeekerDashboard";
+import VolunteerDashboard from "./pages/dashboards/VolunteerDashboard";
+import PsychologistDashboard from "./pages/dashboards/PsychologistDashboard";
+import NgoDashboard from "./pages/dashboards/NgoDashboard";
+import FacilitatorDashboard from "./pages/dashboards/FacilitatorDashboard";
+import AdminDashboard from "./pages/dashboards/AdminDashboard";
 
 function Placeholder({ title }) {
   return (
@@ -16,7 +24,7 @@ export default function App() {
     <Routes>
       {/* Public pages: Navbar + content + Footer */}
       <Route element={<MainLayout />}>
-        <Route path="/" element={<Placeholder title="Home" />} />
+        <Route path="/" element={<Home />} />
         <Route path="/about" element={<Placeholder title="About" />} />
         <Route path="/login" element={<Placeholder title="Login" />} />
         <Route path="/register" element={<Placeholder title="Register" />} />
@@ -25,6 +33,16 @@ export default function App() {
       {/* Logged-in pages: Navbar + Sidebar + content */}
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<Placeholder title="Overview" />} />
+
+        {/* Role dashboards (temporary direct routes until role-based redirect exists) */}
+        <Route path="seeker" element={<SeekerDashboard />} />
+        <Route path="volunteer" element={<VolunteerDashboard />} />
+        <Route path="psychologist" element={<PsychologistDashboard />} />
+        <Route path="ngo" element={<NgoDashboard />} />
+        <Route path="facilitator" element={<FacilitatorDashboard />} />
+        <Route path="admin" element={<AdminDashboard />} />
+
+        {/* Existing sub-page placeholders */}
         <Route path="mood" element={<Placeholder title="Mood Tracker" />} />
         <Route path="journal" element={<Placeholder title="Journal" />} />
         <Route path="sessions" element={<Placeholder title="Book a Session" />} />
