@@ -1,5 +1,5 @@
 
-import DashboardPlaceholder from "./DashboardPlaceholder";
+import DashboardPlaceholder from "../../components/common/DashboardPlaceholder";
 
 export default function PsychologistDashboard() {
   return (
