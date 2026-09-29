@@ -1,7 +1,7 @@
-const REFERRAL_STATUSES = ["pending", "in_progress", "resolved", "closed"];
+//const REFERRAL_STATUSES = ["pending", "in_progress", "resolved", "closed"];
 import { useEffect, useState } from "react";
 import axios from "axios";
-//import { REFERRAL_STATUSES } from "../../components/requestOptions";
+import { REFERRAL_STATUSES } from "../../components/requestOptions";
 import StatusBadge from "../../components/common/StatusBadge";
 
 const authHeader = () => ({
