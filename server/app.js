@@ -1,17 +1,16 @@
-
 const express = require('express');
 const cors = require('cors');
-const authRoutes = require('./routes/authRoutes');
+// ...other requires
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
-
-app.get('/', (req, res) => {
-  res.send('MindEase API is running.');
-});
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/requests', require('./routes/requestRoutes'));
+app.use('/api/referrals', require('./routes/referralRoutes'));
+app.use('/api/ngos', require('./routes/ngoRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 
 module.exports = app;
