@@ -13,6 +13,7 @@ import PsychologistDashboard from "./pages/psychologist/PsychologistDashboard";
 import NgoDashboard from "./pages/ngo/NgoDashboard";
 import FacilitatorDashboard from "./pages/facilitator/FacilitatorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import CrisisRequestForm from "./pages/seeker/CrisisRequestForm";
 
 function Placeholder({ title }) {
   return (
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="ngo" element={<RequireRole role="ngo"><NgoDashboard /></RequireRole>} />
         <Route path="facilitator" element={<RequireRole role="facilitator"><FacilitatorDashboard /></RequireRole>} />
         <Route path="admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
+        <Route path="new-request" element={<RequireRole role="seeker"><CrisisRequestForm /></RequireRole>} />
 
         <Route path="mood" element={<Placeholder title="Mood Tracker" />} />
         <Route path="journal" element={<Placeholder title="Journal" />} />

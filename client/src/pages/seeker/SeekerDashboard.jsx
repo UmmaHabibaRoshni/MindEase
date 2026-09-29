@@ -29,7 +29,8 @@ export default function SeekerDashboard() {
           <h2>Seeker Dashboard</h2>
           <p className="text-muted">Manage and track your mental health support requests.</p>
         </div>
-        <Link to="/seeker/new-request">
+        
+        <Link to="/dashboard/new-request">
           <button className="btn">+ New Request</button>
         </Link>
       </div>

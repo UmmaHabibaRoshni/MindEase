@@ -22,3 +22,10 @@ export const REQUEST_STATUSES = [
   { value: 'referred', label: 'Referred' },
   { value: 'closed', label: 'Closed' },
 ];
+
+export const REFERRAL_STATUSES = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'closed', label: 'Closed' },
+];
