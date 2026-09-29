@@ -4,12 +4,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const generateToken = (user) => {
+  
   return jwt.sign(
     { id: user._id, role: user.role, status: user.status },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 };
+const ALLOWED_ROLES = ['seeker', 'volunteer', 'psychologist', 'ngo', 'facilitator'];
+
 
 // POST /api/auth/register
 exports.register = async (req, res) => {
@@ -18,6 +21,10 @@ exports.register = async (req, res) => {
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'Name, email, password and role are required.' });
+    }
+
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role.' });
     }
 
     const existing = await User.findOne({ email });
@@ -35,24 +42,34 @@ exports.register = async (req, res) => {
       role,
     });
 
-    const token = generateToken(user);
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    };
 
-    res.status(201).json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-      },
-    });
+    // pending accounts get no token until an admin approves them
+    if (user.status !== 'approved') {
+      return res.status(201).json({
+        message: 'Registration successful. Your account is awaiting admin approval.',
+        user: userData,
+      });
+    }
+
+    const token = generateToken(user);
+    res.status(201).json({ token, user: userData });
   } catch (err) {
     res.status(500).json({ message: 'Registration failed.', error: err.message });
   }
 };
 
+    
+      
+
 // POST /api/auth/login
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -71,6 +88,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
+    // checked after the password so wrong-password guesses learn nothing about status
+    if (user.status === 'pending') {
+      return res.status(403).json({ message: 'Your account is awaiting admin approval.' });
+    }
+    if (user.status === 'rejected') {
+      return res.status(403).json({ message: 'Your account was not approved.' });
+    }
+
     const token = generateToken(user);
 
     res.status(200).json({
@@ -87,6 +112,9 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Login failed.', error: err.message });
   }
 };
+
+   
+        
 
 // GET /api/auth/me
 exports.getMe = async (req, res) => {
