@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -6,6 +5,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Home from "./pages/public/Home";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
+import About from "./pages/public/About"; // 👈 Real About Component
 
 import SeekerDashboard from "./pages/seeker/SeekerDashboard";
 import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
@@ -17,9 +17,9 @@ import CrisisRequestForm from "./pages/seeker/CrisisRequestForm";
 
 function Placeholder({ title }) {
   return (
-    <div>
-      <h1>{title}</h1>
-      <p>This page is coming soon.</p>
+    <div style={{ padding: "40px", textAlign: "center" }}>
+      <h1 style={{ fontSize: "24px", color: "#2d3748" }}>{title}</h1>
+      <p style={{ color: "#718096" }}>This page is coming soon.</p>
     </div>
   );
 }
@@ -52,7 +52,7 @@ export default function App() {
       {/* Public pages: Navbar + content + Footer */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/about" element={<Placeholder title="About" />} />
+        <Route path="/about" element={<About />} /> {/* 👈 Placeholder সরিয়ে About পেজটি দেওয়া হলো */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>

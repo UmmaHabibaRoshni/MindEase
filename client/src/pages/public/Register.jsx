@@ -3,13 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
 const colors = {
-  primary: "#1A90F8",
-  white: "#fff",
-  soft: "#F8F9FA",
-  text: "#1F2933",
-  muted: "#5F6B7A",
-  border: "#E3E8EE",
-  error: "#D64545",
+  primary: "#2f855a",
+  primaryLight: "#c6f6d5",
+  white: "#ffffff",
+  bg: "#f7faf8",
+  text: "#2d3748",
+  muted: "#718096",
+  border: "#e5e7eb",
+  error: "#c53030",
 };
 
 // Roles a person can self-register as. Admin accounts are created
@@ -199,8 +200,8 @@ function buttonStyle(loading) {
     width: "100%",
     padding: "12px",
     marginTop: 4,
-    background: loading ? "#7FB9F6" : colors.primary,
-    color: colors.white,
+    background: loading ? colors.primaryLight : colors.primary,
+    color: loading ? colors.primary : colors.white,
     border: "none",
     borderRadius: 6,
     fontSize: 15,

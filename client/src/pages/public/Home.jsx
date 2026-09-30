@@ -1,211 +1,161 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import React from "react";
+import { Link } from "react-router-dom";
 
 const colors = {
   primary: "#2f855a",
-  primaryLight: "#c6f6d5",
-  white: "#ffffff",
-  bg: "#f7faf8",
+  primaryLight: "#f0fff4",
   text: "#2d3748",
   muted: "#718096",
-  border: "#e5e7eb",
-  error: "#c53030",
+  bg: "#f7faf8",
+  white: "#ffffff",
+  border: "#e2e8f0",
 };
 
-// Roles a person can self-register as. Admin accounts are created
-// separately, not through this form.
-const ROLES = [
-  { value: "seeker", label: "Seeker" },
-  { value: "volunteer", label: "Volunteer" },
-  { value: "psychologist", label: "Psychologist" },
-  { value: "ngo", label: "NGO" },
-  { value: "facilitator", label: "Facilitator" },
-];
-
-export default function Register() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "seeker",
-  });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      // ADJUST: endpoint path if your authRoutes.js uses something else
-      const res = await axios.post("/api/auth/register", form);
-
-      // ADJUST: field names if authController.js returns a different shape
-      const { token, user } = res.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      navigate(`/dashboard/${user.role}`);
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Something went wrong. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function Home() {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: colors.bg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "24px",
-      }}
-    >
-      <div
+    <div style={{ backgroundColor: colors.bg, minHeight: "100vh" }}>
+      {/* Hero Section */}
+      <section
         style={{
-          width: "100%",
-          maxWidth: 420,
-          background: colors.white,
-          border: `1px solid ${colors.border}`,
-          borderRadius: 8,
-          padding: "32px 28px",
+          padding: "80px 20px",
+          textAlign: "center",
+          backgroundColor: colors.white,
+          borderBottom: `1px solid ${colors.border}`,
         }}
       >
-        <p style={{ margin: 0, color: colors.primary, fontWeight: 600, fontSize: 14 }}>
-          MindEase
-        </p>
-        <h1 style={{ margin: "4px 0 24px", color: colors.text, fontSize: 24 }}>
-          Create your account
-        </h1>
-
-        {error && (
-          <div
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <span
             style={{
-              background: "#fff5f5",
-              border: `1px solid ${colors.error}`,
-              borderRadius: 6,
-              padding: "10px 14px",
-              marginBottom: 16,
-              color: colors.error,
-              fontSize: 14,
+              color: colors.primary,
+              fontWeight: "600",
+              fontSize: "14px",
+              letterSpacing: "1px",
+              textTransform: "uppercase",
             }}
           >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <label style={labelStyle}>
-            Full name
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={labelStyle}>
-            Email
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={labelStyle}>
-            Password
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              required
-              minLength={6}
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={labelStyle}>
-            I am registering as
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              style={inputStyle}
+            Welcome to MindEase
+          </span>
+          <h1
+            style={{
+              fontSize: "42px",
+              color: colors.text,
+              margin: "16px 0",
+              fontWeight: "700",
+            }}
+          >
+            Your Safe Space for Mental Well-being
+          </h1>
+          <p
+            style={{
+              fontSize: "18px",
+              color: colors.muted,
+              lineHeight: "1.6",
+              marginBottom: "32px",
+            }}
+          >
+            Connect anonymously with trained volunteers, certified psychologists, and supportive communities. Get the care and guidance you deserve today.
+          </p>
+          <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
+            <Link
+              to="/register"
+              style={{
+                backgroundColor: colors.primary,
+                color: colors.white,
+                padding: "14px 28px",
+                borderRadius: "6px",
+                fontWeight: "600",
+                textDecoration: "none",
+              }}
             >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              Get Started 
+            </Link>
+            <Link
+              to="/login"
+              style={{
+                border: `1px solid ${colors.border}`,
+                backgroundColor: colors.white,
+                color: colors.text,
+                padding: "14px 28px",
+                borderRadius: "6px",
+                fontWeight: "600",
+                textDecoration: "none",
+              }}
+            >
+              Log In
+            </Link>
+          </div>
+        </div>
+      </section>
 
-          <button type="submit" disabled={loading} style={buttonStyle(loading)}>
-            {loading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
+      {/* Features Section */}
+      <div style={{ maxWidth: "1100px", margin: "60px auto", padding: "0 20px" }}>
+        <h2
+          style={{
+            fontSize: "28px",
+            color: colors.text,
+            textAlign: "center",
+            marginBottom: "40px",
+            fontWeight: "600",
+          }}
+        >
+          How MindEase Helps You
+        </h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "28px",
+          }}
+        >
+          <div
+            style={{
+              background: colors.white,
+              padding: "28px",
+              borderRadius: "8px",
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <h3 style={{ fontSize: "20px", color: colors.primary, marginBottom: "12px" }}>
+              🔒 Anonymous & Secure
+            </h3>
+            <p style={{ color: colors.muted, fontSize: "15px", lineHeight: "1.6" }}>
+              Your privacy is our priority. Talk freely without revealing your identity or worrying about data safety.
+            </p>
+          </div>
 
-        <p style={{ marginTop: 20, fontSize: 14, color: colors.muted, textAlign: "center" }}>
-          Already have an account?{" "}
-          <Link to="/login" style={{ color: colors.primary, fontWeight: 600 }}>
-            Log in
-          </Link>
-        </p>
+          <div
+            style={{
+              background: colors.white,
+              padding: "28px",
+              borderRadius: "8px",
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <h3 style={{ fontSize: "20px", color: colors.primary, marginBottom: "12px" }}>
+              👨‍⚕️ Professional Support
+            </h3>
+            <p style={{ color: colors.muted, fontSize: "15px", lineHeight: "1.6" }}>
+              Connect with certified psychologists and trained volunteers whenever you need professional guidance.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: colors.white,
+              padding: "28px",
+              borderRadius: "8px",
+              border: `1px solid ${colors.border}`,
+            }}
+          >
+            <h3 style={{ fontSize: "20px", color: colors.primary, marginBottom: "12px" }}>
+              🤝 NGO & Community
+            </h3>
+            <p style={{ color: colors.muted, fontSize: "15px", lineHeight: "1.6" }}>
+              Access emergency resources and get referred to trusted NGOs for comprehensive mental assistance.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
-}
-
-const labelStyle = {
-  display: "block",
-  marginBottom: 16,
-  color: colors.text,
-  fontSize: 14,
-  fontWeight: 500,
-};
-
-const inputStyle = {
-  display: "block",
-  width: "100%",
-  marginTop: 6,
-  padding: "10px 12px",
-  border: `1px solid ${colors.border}`,
-  borderRadius: 6,
-  fontSize: 15,
-  color: colors.text,
-  boxSizing: "border-box",
-};
-
-function buttonStyle(loading) {
-  return {
-    width: "100%",
-    padding: "12px",
-    marginTop: 4,
-    background: loading ? colors.primaryLight : colors.primary,
-    color: loading ? colors.primary : colors.white,
-    border: "none",
-    borderRadius: 6,
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: loading ? "default" : "pointer",
-  };
 }

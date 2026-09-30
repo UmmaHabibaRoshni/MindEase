@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const CrisisRequest = require("../models/CrisisRequest");
 
@@ -26,6 +25,19 @@ exports.createRequest = async (req, res) => {
       const messages = Object.values(err.errors).map((e) => e.message);
       return res.status(400).json({ message: messages.join(", ") });
     }
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET /api/requests/mine  (seeker only)
+exports.getMyRequests = async (req, res) => {
+  try {
+    const requests = await CrisisRequest.find({ seeker: req.user.id })
+      .sort({ createdAt: -1 });
+
+    res.json({ requests });
+  } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }

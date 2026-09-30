@@ -1,5 +1,4 @@
-// Values must match CATEGORIES / URGENCY_LEVELS in server/models/CrisisRequest.js
-// value = sent to server, label = shown in the UI
+// Values must match CATEGORIES / URGENCY_LEVELS / status enum in server/models/CrisisRequest.js
 
 export const CATEGORIES = [
   { value: 'mental_health', label: 'Mental Health' },
@@ -16,6 +15,7 @@ export const URGENCY_LEVELS = [
   { value: 'high', label: 'High' },
   { value: 'critical', label: 'Critical' },
 ];
+
 export const REQUEST_STATUSES = [
   { value: 'pending', label: 'Pending' },
   { value: 'accepted', label: 'Accepted' },
@@ -23,9 +23,9 @@ export const REQUEST_STATUSES = [
   { value: 'closed', label: 'Closed' },
 ];
 
-export const REFERRAL_STATUSES = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'closed', label: 'Closed' },
-];
+export const REFERRAL_STATUSES = {
+  PENDING: 'Pending',
+  ACCEPTED: 'Accepted',
+  REJECTED: 'Rejected',
+  COMPLETED: 'Completed'
+};

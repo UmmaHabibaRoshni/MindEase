@@ -1,117 +1,147 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { CATEGORIES, URGENCY_LEVELS } from "../../components/requestOptions";
 
-const toOption = (o) =>
-  typeof o === "string"
-    ? { value: o, label: o.replace(/_/g, " ") }
-    : { value: o.value, label: o.label || o.value };
-
-const fieldStyle = {
-  width: "100%",
-  padding: "0.6rem",
-  marginBottom: "1rem",
-  border: "1px solid #ccc",
-  borderRadius: 6,
-  fontSize: "1rem",
-  boxSizing: "border-box",
-};
-
-const labelStyle = { display: "block", fontWeight: 600, marginBottom: 4 };
-
 export default function CrisisRequestForm() {
-  const [form, setForm] = useState({ category: "", description: "", urgency: "" });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // formData State Definition
+  const [formData, setFormData] = useState({
+    category: CATEGORIES[0]?.value || "mental_health",
+    urgency: URGENCY_LEVELS[0]?.value || "low",
+    description: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (form.description.trim().length < 10) {
-      return setError("Description must be at least 10 characters.");
-    }
-
     setLoading(true);
+    setError("");
+
     try {
-      const res = await axios.post("/api/requests", form, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      const token = localStorage.getItem("token");
+      await axios.post("/api/requests", formData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setSuccess(res.data.message || "Request submitted");
-      setForm({ category: "", description: "", urgency: "" });
+
+      navigate("/dashboard/seeker");
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong. Try again.");
+      console.error("Error submitting crisis request:", err);
+      setError(
+        err.response?.data?.message || "Failed to submit request. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 520, margin: "2rem auto", padding: "0 1rem" }}>
-      <h2 style={{ marginBottom: "1rem" }}>Submit a crisis request</h2>
-      <form onSubmit={handleSubmit}>
-        <label style={labelStyle}>Category</label>
-        <select
-          name="category"
-          value={form.category}
-          onChange={handleChange}
-          required
-          style={fieldStyle}
-        >
-          <option value="">Select category</option>
-          {CATEGORIES.map(toOption).map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "2rem auto",
+        padding: "24px",
+        backgroundColor: "#fff",
+        borderRadius: "8px",
+        border: "1px solid #e2e8f0",
+      }}
+    >
+      <h2 style={{ color: "#2d3748", marginBottom: "8px" }}>Request Crisis Support</h2>
+      <p style={{ color: "#718096", fontSize: "14px", marginBottom: "24px" }}>
+        Fill out the form below to get help from our support team.
+      </p>
 
-        <label style={labelStyle}>Urgency</label>
-        <select
-          name="urgency"
-          value={form.urgency}
-          onChange={handleChange}
-          required
-          style={fieldStyle}
-        >
-          <option value="">Select urgency</option>
-          {URGENCY_LEVELS.map(toOption).map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-
-        <label style={labelStyle}>Describe your situation</label>
-        <textarea
-          name="description"
-          rows={5}
-          maxLength={2000}
-          value={form.description}
-          onChange={handleChange}
-          required
-          style={fieldStyle}
-        />
-
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
-        {success && <p style={{ color: "green" }}>{success}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
+      {error && (
+        <div
           style={{
-            width: "100%",
-            padding: "0.7rem",
-            background: "#2e8b57",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontSize: "1rem",
-            cursor: "pointer",
+            color: "crimson",
+            backgroundColor: "#fff5f5",
+            padding: "10px",
+            borderRadius: "6px",
+            marginBottom: "16px",
+            fontSize: "14px",
           }}
         >
-          {loading ? "Submitting..." : "Submit request"}
-        </button>
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: "16px" }}>
+          <label style={{ display: "block", fontWeight: "600", color: "#4a5568", marginBottom: "6px" }}>
+            Category
+          </label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e0" }}
+          >
+            {CATEGORIES.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <label style={{ display: "block", fontWeight: "600", color: "#4a5568", marginBottom: "6px" }}>
+            Urgency Level
+          </label>
+          <select
+            name="urgency"
+            value={formData.urgency}
+            onChange={handleChange}
+            style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e0" }}
+          >
+            {URGENCY_LEVELS.map((urg) => (
+              <option key={urg.value} value={urg.value}>
+                {urg.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: "24px" }}>
+          <label style={{ display: "block", fontWeight: "600", color: "#4a5568", marginBottom: "6px" }}>
+            Description / Notes (At least 10 characters)
+          </label>
+          <textarea
+            name="description"
+            rows="4"
+            required
+            minLength={10}
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Describe what you are currently going through..."
+            style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e0", resize: "vertical" }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard/seeker")}
+            style={{ padding: "10px 18px", borderRadius: "6px", border: "1px solid #cbd5e0", backgroundColor: "#fff", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ padding: "10px 18px", borderRadius: "6px", border: "none", backgroundColor: "#2f855a", color: "#fff", fontWeight: "600", cursor: "pointer" }}
+          >
+            {loading ? "Submitting..." : "Submit Request"}
+          </button>
+        </div>
       </form>
     </div>
   );
