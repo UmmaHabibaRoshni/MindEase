@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import ChatWindow from "../../components/chat/ChatWindow";
+import { getUserIdFromToken } from "../../utils/getUserId";
 
 export default function SeekerDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const user = JSON.parse(localStorage.getItem("user")) || { id: "seeker_user" };
+  const currentUserId = getUserIdFromToken();
+  const [chatRequestId, setChatRequestId] = useState(null);
 
   const fetchRequests = async () => {
     try {
@@ -96,6 +98,15 @@ export default function SeekerDashboard() {
 
                 <p style={{ color: "#4a5568", margin: "8px 0", fontSize: "14px" }}>{req.description}</p>
 
+                {(req.status === "accepted" || req.status === "referred") && (
+                  <button
+                    onClick={() => setChatRequestId(req._id)}
+                    style={{ backgroundColor: "#2f855a", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
+                  >
+                    Open chat
+                  </button>
+                )}
+
                 <div style={{ display: "flex", justifyContent: "space-between", color: "#718096", fontSize: "12px", marginTop: "12px", borderTop: "1px solid #edf2f7", paddingTop: "8px" }}>
                   <small>Submitted on: {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : "N/A"}</small>
                   <small>
@@ -114,7 +125,17 @@ export default function SeekerDashboard() {
           Connect directly with an assigned volunteer or psychologist.
         </p>
 
-        <ChatWindow currentUserId={user.id || "seeker_user"} />
+        {chatRequestId ? (
+          <ChatWindow
+            requestId={chatRequestId}
+            currentUserId={currentUserId}
+            title="Chat with your volunteer"
+          />
+        ) : (
+          <p style={{ color: "#718096", fontSize: "14px" }}>
+            Chat opens after a volunteer accepts your request. Click "Open chat" on an accepted request above.
+          </p>
+        )}
       </div>
     </div>
   );
