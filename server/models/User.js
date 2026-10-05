@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
@@ -19,6 +18,9 @@ const userSchema = new mongoose.Schema(
         return this.role === 'seeker' ? 'approved' : 'pending';
       },
     },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    verifiedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: '' },
   },
   { timestamps: true }
 );
