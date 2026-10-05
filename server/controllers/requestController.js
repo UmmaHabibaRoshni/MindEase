@@ -62,6 +62,28 @@ exports.getPendingRequests = async (req, res) => {
   }
 };
 
+// GET /api/requests/accepted  (approved volunteer only)
+// Requests this volunteer has accepted, so they can open the chat.
+exports.getAcceptedRequests = async (req, res) => {
+  try {
+    if (req.user.status !== "approved") {
+      return res.status(403).json({ message: "Your account is not approved yet." });
+    }
+
+    const requests = await CrisisRequest.find({
+      acceptedBy: req.user.id,
+      status: { $in: ["accepted", "referred"] },
+    })
+      .select("category description urgency status createdAt")
+      .sort({ createdAt: -1 });
+
+    res.json({ requests });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // PATCH /api/requests/:id/accept  (approved volunteer only)
 exports.acceptRequest = async (req, res) => {
   try {
