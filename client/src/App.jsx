@@ -5,7 +5,9 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Home from "./pages/public/Home";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
-import About from "./pages/public/About"; // 👈 Real About Component
+import About from "./pages/public/About";
+import ResourceLibrary from "./pages/public/ResourceLibrary"; 
+import ManageResources from "./pages/admin/ManageResources"; 
 
 import SeekerDashboard from "./pages/seeker/SeekerDashboard";
 import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
@@ -32,13 +34,13 @@ function getUser() {
   }
 }
 
-// /dashboard -> নিজের role-এর dashboard-এ পাঠায়
+
 function DashboardIndex() {
   const user = getUser();
   return <Navigate to={user ? `/dashboard/${user.role}` : "/login"} replace />;
 }
 
-// ভুল role হলে নিজের dashboard-এ ফেরত পাঠায়
+
 function RequireRole({ role, children }) {
   const user = getUser();
   if (!user) return <Navigate to="/login" replace />;
@@ -52,7 +54,8 @@ export default function App() {
       {/* Public pages: Navbar + content + Footer */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} /> {/* 👈 Placeholder সরিয়ে About পেজটি দেওয়া হলো */}
+        <Route path="/about" element={<About />} />
+        <Route path="/resources" element={<ResourceLibrary />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
@@ -68,6 +71,9 @@ export default function App() {
         <Route path="facilitator" element={<RequireRole role="facilitator"><FacilitatorDashboard /></RequireRole>} />
         <Route path="admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
         <Route path="new-request" element={<RequireRole role="seeker"><CrisisRequestForm /></RequireRole>} />
+
+        {/* Admin Specific Route */}
+        <Route path="resources" element={<RequireRole role="admin"><ManageResources /></RequireRole>} /> {/* 👈 Admin Manage Resources */}
 
         <Route path="mood" element={<Placeholder title="Mood Tracker" />} />
         <Route path="journal" element={<Placeholder title="Journal" />} />
