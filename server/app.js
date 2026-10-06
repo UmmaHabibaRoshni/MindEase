@@ -13,5 +13,6 @@ app.use('/api/referrals', require('./routes/referralRoutes'));
 app.use('/api/ngos', require('./routes/ngoRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/resources', require('./routes/resourceRoutes'));
 
 module.exports = app;
