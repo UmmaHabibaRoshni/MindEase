@@ -29,7 +29,7 @@ const crisisRequestSchema = new mongoose.Schema(
     urgency: { type: String, enum: URGENCY_LEVELS, required: true },
     status: {
       type: String,
-      enum: ["pending", "accepted", "referred", "closed"],
+      enum: ["pending", "accepted", "escalated", "referred", "closed"], // <-- "escalated" যোগ করা হয়েছে
       default: "pending",
     },
     acceptedBy: {
