@@ -1,4 +1,5 @@
-// Values must match CATEGORIES / URGENCY_LEVELS / status enum in server/models/CrisisRequest.js
+// CATEGORIES / URGENCY_LEVELS / REQUEST_STATUSES values must match server/models/CrisisRequest.js
+// RESOURCE_TYPES values must match the type enum in server/models/Resource.js
 
 export const CATEGORIES = [
   { value: 'mental_health', label: 'Mental Health' },
@@ -29,3 +30,8 @@ export const REFERRAL_STATUSES = {
   REJECTED: 'Rejected',
   COMPLETED: 'Completed'
 };
+
+export const RESOURCE_TYPES = [
+  { value: 'helpline', label: 'Helpline' },
+  { value: 'article', label: 'Article' },
+];
