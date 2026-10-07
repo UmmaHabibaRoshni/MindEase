@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import ResourceCard from '../components/ResourceCard';
+import axios from 'axios';
 
 const ResourceLibrary = () => {
   const [resources, setResources] = useState([]);
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const categories = ['all', 'mental_health', 'abuse_violence', 'legal_aid', 'medical', 'other'];
+  const initialMockData = [
+    {
+      _id: '1',
+      title: 'Coping with Anxiety Guide',
+      category: 'Mental Health',
+      type: 'PDF',
+      description: 'Practical grounding techniques and breathing exercises for acute anxiety.',
+      link: 'https://example.com/anxiety-guide.pdf'
+    },
+    {
+      _id: '2',
+      title: 'Mindfulness Meditation Audio',
+      category: 'Wellness',
+      type: 'Audio',
+      description: '10-minute guided daily meditation for stress reduction.',
+      link: 'https://example.com/meditation.mp3'
+    },
+    {
+      _id: '3',
+      title: 'Understanding Sleep Hygiene',
+      category: 'Lifestyle',
+      type: 'Article',
+      description: 'Scientific tips to improve your sleep cycle and restful sleep.',
+      link: 'https://example.com/sleep-hygiene'
+    }
+  ];
 
   useEffect(() => {
     fetchResources();
@@ -15,72 +40,99 @@ const ResourceLibrary = () => {
 
   const fetchResources = async () => {
     try {
-      const res = await fetch('/api/resources');
-      const data = await res.json();
-      if (data.success) {
-        setResources(data.data || data.resources || []);
+      const res = await axios.get('http://localhost:5000/api/resources');
+      if (res.data && res.data.length > 0) {
+        setResources(res.data);
+      } else {
+        setResources(initialMockData);
       }
     } catch (err) {
-      console.error('Error fetching resources:', err);
+      console.warn("Backend API not reachable, loading default resources.");
+      setResources(initialMockData);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredResources = resources.filter((item) => {
-    const matchesSearch =
-      item.title.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory =
-      selectedCategory === 'all' || item.category === selectedCategory;
-
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Resource Library</h1>
-        <p className="text-gray-600">Explore helpline numbers, articles, and crisis support materials.</p>
-      </div>
+  const categories = ['All', 'Mental Health', 'Wellness', 'Lifestyle'];
 
-      {/* Search & Filter Controls */}
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+  return (
+    <div style={containerStyle}>
+      <header style={headerStyle}>
+        <h2>MindEase Resource Library</h2>
+        <p>Explore verified articles, audio guides, and tools for mental well-being.</p>
+      </header>
+
+      {/* Filter & Search Bar */}
+      <div style={filterContainerStyle}>
         <input
           type="text"
-          placeholder="Search resources by keyword..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Search resources..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={inputStyle}
         />
-
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 capitalize"
+          style={selectStyle}
         >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat === 'all' ? 'All Categories' : cat.replace('_', ' ')}
-            </option>
+          {categories.map((cat, idx) => (
+            <option key={idx} value={cat}>{cat}</option>
           ))}
         </select>
       </div>
 
       {/* Resource Cards Grid */}
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading resources...</div>
-      ) : filteredResources.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map((res) => (
-            <ResourceCard key={res._id} resource={res} />
+        <p style={{ textAlign: 'center' }}>Loading resources...</p>
+      ) : (
+        <div style={gridStyle}>
+          {filteredResources.map((resource) => (
+            <div key={resource._id} style={cardStyle}>
+              <div>
+                <div style={badgeStyle}>{resource.category}</div>
+                <h3 style={{ marginTop: '10px' }}>{resource.title}</h3>
+                <p style={{ color: '#555', fontSize: '0.9rem' }}>{resource.description}</p>
+              </div>
+              <div style={cardFooterStyle}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#007bff' }}>
+                  [{resource.type}]
+                </span>
+                <a 
+                  href={resource.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={linkBtnStyle}
+                >
+                  Access Resource
+                </a>
+              </div>
+            </div>
           ))}
         </div>
-      ) : (
-        <div className="text-center py-12 text-gray-500">No resources found matching your search.</div>
       )}
     </div>
   );
 };
+
+// Inline Styles
+const containerStyle = { maxWidth: '1000px', margin: '0 auto', padding: '20px' };
+const headerStyle = { textAlign: 'center', marginBottom: '30px' };
+const filterContainerStyle = { display: 'flex', gap: '15px', marginBottom: '25px', flexWrap: 'wrap' };
+const inputStyle = { flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #ccc' };
+const selectStyle = { padding: '10px', borderRadius: '6px', border: '1px solid #ccc' };
+const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' };
+const cardStyle = { background: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #eee', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' };
+const badgeStyle = { display: 'inline-block', background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' };
+const cardFooterStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px' };
+const linkBtnStyle = { background: '#4f46e5', color: '#fff', padding: '6px 12px', borderRadius: '4px', textDecoration: 'none', fontSize: '0.85rem' };
 
 export default ResourceLibrary;
