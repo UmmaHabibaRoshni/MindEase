@@ -1,0 +1,370 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "MindEase BL-11 Resources (T11.10)",
+  "dateExported": "2026-10-07T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "settings": {
+    "envVars": [
+      { "name": "baseUrl", "value": "http://localhost:5000" },
+      { "name": "adminToken", "value": "<paste the admin JWT from POST /api/auth/login>" },
+      { "name": "volunteerToken", "value": "<paste the volunteer JWT>" },
+      { "name": "categoryId", "value": "<ObjectId from GET /api/resources/categories/all>" },
+      { "name": "resourceId", "value": "<set from the create response>" }
+    ]
+  },
+  "requests": [
+    {
+      "_id": "bl11-01",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "01 Public list resources",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "GET",
+      "sortNum": 10000,
+      "headers": [],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.resources", "action": "istype", "value": "array" },
+        { "type": "json-query", "custom": "json.count", "action": "istype", "value": "number" }
+      ]
+    },
+    {
+      "_id": "bl11-02",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "02 Filter by type=helpline",
+      "url": "{{baseUrl}}/api/resources?type=helpline",
+      "method": "GET",
+      "sortNum": 20000,
+      "headers": [],
+      "params": [{ "name": "type", "value": "helpline", "isPath": false }],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-03",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "03 Reject unknown type",
+      "url": "{{baseUrl}}/api/resources?type=podcast",
+      "method": "GET",
+      "sortNum": 30000,
+      "headers": [],
+      "params": [{ "name": "type", "value": "podcast", "isPath": false }],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-04",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "04 Search by title",
+      "url": "{{baseUrl}}/api/resources?search=help",
+      "method": "GET",
+      "sortNum": 40000,
+      "headers": [],
+      "params": [{ "name": "search", "value": "help", "isPath": false }],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-05",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "05 List categories",
+      "url": "{{baseUrl}}/api/resources/categories/all",
+      "method": "GET",
+      "sortNum": 50000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-06",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "06 Get one resource by id",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "GET",
+      "sortNum": 60000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-07",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "07 Reject malformed id",
+      "url": "{{baseUrl}}/api/resources/not-an-id",
+      "method": "GET",
+      "sortNum": 70000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-08",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "08 Missing resource is 404",
+      "url": "{{baseUrl}}/api/resources/000000000000000000000000",
+      "method": "GET",
+      "sortNum": 80000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }]
+    },
+    {
+      "_id": "bl11-09",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "09 Create blocked without token",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 90000,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Anonymous probe\",\n  \"type\": \"article\",\n  \"description\": \"should not be created\",\n  \"content\": \"body\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl11-10",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "10 Create blocked for volunteer",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 100000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{volunteerToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Volunteer probe\",\n  \"type\": \"article\",\n  \"description\": \"should not be created\",\n  \"content\": \"body\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "403" }]
+    },
+    {
+      "_id": "bl11-11",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "11 Admin creates an article",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 110000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Coping with panic attacks\",\n  \"type\": \"article\",\n  \"description\": \"A short guide for seekers.\",\n  \"content\": \"Breathe slowly and ground yourself.\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "json.resource.title", "action": "equal", "value": "Coping with panic attacks" }
+      ]
+    },
+    {
+      "_id": "bl11-12",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "12 Admin creates a helpline",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 120000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"National helpline\",\n  \"type\": \"helpline\",\n  \"description\": \"24/7 crisis line\",\n  \"phone\": \"16263\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "201" }]
+    },
+    {
+      "_id": "bl11-13",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "13 Helpline without phone is 400",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 130000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Broken helpline\",\n  \"type\": \"helpline\",\n  \"description\": \"no phone given\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-14",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "14 Article without content or url is 400",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 140000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Empty article\",\n  \"type\": \"article\",\n  \"description\": \"no body\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-15",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "15 Missing title is 400",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 150000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"type\": \"article\",\n  \"description\": \"no title\",\n  \"content\": \"body\",\n  \"category\": \"{{categoryId}}\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-16",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "16 Invalid category id is 400",
+      "url": "{{baseUrl}}/api/resources",
+      "method": "POST",
+      "sortNum": 160000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Bad category\",\n  \"type\": \"article\",\n  \"description\": \"bad category\",\n  \"content\": \"body\",\n  \"category\": \"mental_health\"\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-17",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "17 Admin updates a resource",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "PATCH",
+      "sortNum": 170000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"title\": \"Coping with panic attacks (v2)\"\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-18",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "18 Update with no valid field is 400",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "PATCH",
+      "sortNum": 180000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"nonsense\": \"x\"\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl11-19",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "19 Unpublish hides it from the public list",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "PATCH",
+      "sortNum": 190000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"isPublished\": false\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-20",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "20 Delete blocked without token",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "DELETE",
+      "sortNum": 200000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl11-21",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "21 Admin deletes the resource",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "DELETE",
+      "sortNum": 210000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl11-22",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "22 Deleting twice is 404",
+      "url": "{{baseUrl}}/api/resources/{{resourceId}}",
+      "method": "DELETE",
+      "sortNum": 220000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }]
+    },
+    {
+      "_id": "bl11-23",
+      "colId": "bl11",
+      "containerId": "",
+      "name": "23 Duplicate category name is 409",
+      "url": "{{baseUrl}}/api/resources/categories",
+      "method": "POST",
+      "sortNum": 230000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"name\": \"Mental Health\"\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "409" }]
+    }
+  ]
+}

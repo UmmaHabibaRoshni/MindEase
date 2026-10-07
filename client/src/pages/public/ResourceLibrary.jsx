@@ -40,12 +40,12 @@ const ResourceLibrary = () => {
 
   const fetchResources = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/resources');
-      if (res.data && res.data.length > 0) {
-        setResources(res.data);
-      } else {
-        setResources(initialMockData);
-      }
+      // The API answers { count, resources }, so res.data itself has no
+      // .length - reading it that way always fell through to the mock data.
+      // The path stays relative so the Vite proxy (and any deployment) works.
+      const res = await axios.get('/api/resources');
+      const fetched = res.data?.resources || [];
+      setResources(fetched.length > 0 ? fetched : initialMockData);
     } catch (err) {
       console.warn("Backend API not reachable, loading default resources.");
       setResources(initialMockData);

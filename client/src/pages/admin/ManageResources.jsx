@@ -18,8 +18,9 @@ const ManageResources = () => {
 
   const fetchAdminResources = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/resources');
-      setResources(res.data || []);
+      // The API answers { count, resources }, not a bare array.
+      const res = await axios.get('/api/resources');
+      setResources(res.data?.resources || []);
     } catch (err) {
       console.warn("Using local state for Admin Manage Resources.");
     }
