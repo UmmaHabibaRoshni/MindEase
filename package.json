@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "test:e2e": "mocha test/sprint3.e2e.test.js --timeout 90000",
+    "test:e2e:all": "mocha test/*.test.js --timeout 90000"
+  },
   "dependencies": {
     "socket.io": "^4.8.4"
   },
