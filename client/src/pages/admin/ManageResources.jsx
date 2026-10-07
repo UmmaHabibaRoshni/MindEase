@@ -18,7 +18,8 @@ const ManageResources = () => {
   const fetchResources = async () => {
     const res = await fetch('/api/resources');
     const data = await res.json();
-    if (data.success) setResources(data.data || data.resources || []);
+    // See ResourceLibrary: the API has no `success` key, only { count, resources }.
+    if (res.ok) setResources(data.resources || data.data || []);
   };
 
   const handleSubmit = async (e) => {

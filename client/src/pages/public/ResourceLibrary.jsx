@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ResourceCard from '../components/ResourceCard';
+import ResourceCard from '../../components/ResourceCard';
 
 const ResourceLibrary = () => {
   const [resources, setResources] = useState([]);
@@ -17,8 +17,10 @@ const ResourceLibrary = () => {
     try {
       const res = await fetch('/api/resources');
       const data = await res.json();
-      if (data.success) {
-        setResources(data.data || data.resources || []);
+      // The API responds { count, resources } with no `success` key, so gating
+      // on data.success left the library permanently empty.
+      if (res.ok) {
+        setResources(data.resources || data.data || []);
       }
     } catch (err) {
       console.error('Error fetching resources:', err);
