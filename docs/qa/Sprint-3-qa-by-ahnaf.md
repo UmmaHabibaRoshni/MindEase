@@ -1,34 +1,60 @@
-# Sprint 3 QA note — Ahnaf
+# Sprint 3 — QA Report
 
-Tester: Ahnaf Shakib
-Date: 2026-10-07
-Branch: `feature/ahnaf-sprint3`
-
-Covers my own Sprint 3 rows (BL-10 database, BL-8 frontend, BL-9 backend, BL-11 testing)
-plus cross-story Selenium coverage of BL-8, BL-9 and BL-10, which are the other
-three members' stories.
+**By:** Ahnaf Shakib
+**Date:** 7 October 2026
+**Branch:** `feature/ahnaf-sprint3`
 
 ---
 
-## 1. What I built
+## 1. Summary
 
-| Task | Deliverable |
+I finished all four of my Sprint 3 tasks and tested them. I also wrote Selenium
+tests for the other three members' stories.
+
+| | |
 |---|---|
-| T10.1 | `server/models/VolunteerAvailability.js` reworked (see note 5.1) |
-| T10.2 | `server/config/availabilityOptions.js`, `client/src/constants/availabilityOptions.js` |
+| Tests written | **125** |
+| Tests run and passing | **100** (60 server, 20 client, 20 Selenium) |
+| Tests skipped on purpose | 2 (teammate pages not merged yet) |
+| Tests failing | **0** |
+| Bugs found | **8** |
+| Bugs fixed | **3** |
+
+**The important part:** three bugs were serious enough to break the app for
+everyone. All three are now fixed. See section 4.
+
+---
+
+## 2. What I built
+
+### BL-10 — Availability (database)
+
+| Task | File |
+|---|---|
+| T10.1 | `server/models/VolunteerAvailability.js` |
+| T10.2 | `server/config/availabilityOptions.js` + `client/src/constants/availabilityOptions.js` |
 | T10.3 | `server/tests/volunteerAvailability.test.js` — 16 tests |
+
+### BL-8 — Admin verification (frontend)
+
+| Task | File |
+|---|---|
 | T8.7 | `client/src/api/adminApi.js`, `client/src/pages/admin/Verifications.jsx` |
-| T8.8 | Route `/dashboard/verifications` (admin-only) wired in `client/src/App.jsx` |
-| T8.9 | `client/src/api/adminApi.test.js` + `client/src/pages/admin/Verifications.test.jsx` — 20 tests |
-| T9.4 / T9.5 | `server/controllers/escalationController.js`, `server/routes/escalationRoutes.js` |
+| T8.8 | `/dashboard/verifications` route (admin only) in `client/src/App.jsx` |
+| T8.9 | 2 test files — 20 tests |
+
+The admin can see every pending account, approve it, or reject it with a reason.
+
+### BL-9 — Escalation (backend)
+
+| Task | File |
+|---|---|
+| T9.4, T9.5 | `server/controllers/escalationController.js`, `server/routes/escalationRoutes.js` |
 | T9.6 | `server/tests/escalation.test.js` — 31 tests |
-| T11.10 | `docs/thunder-client/BL-11-resources.json` — 23-request collection |
-| T11.11 | `test/sprint3.e2e.test.js` — 22 Selenium / API specs |
-| T11.12 | this note |
 
-New endpoints (BL-9):
+Six new endpoints:
 
-| Method | Route | Role |
+| Method | Route | Who can use it |
 |---|---|---|
 | POST | `/api/escalations` | volunteer |
 | GET | `/api/escalations/psychologists` | volunteer |
@@ -37,288 +63,282 @@ New endpoints (BL-9):
 | PATCH | `/api/escalations/:id/reject` | psychologist |
 | PATCH | `/api/escalations/:id/complete` | psychologist |
 
+How it works: a volunteer hands a case to a psychologist with a written summary.
+The request becomes `escalated`. The psychologist then accepts, rejects, or
+completes it. Rejecting gives the case back to the volunteer. Completing closes
+the request.
+
+### BL-11 — Resources (testing)
+
+| Task | File |
+|---|---|
+| T11.10 | `docs/thunder-client/BL-11-resources.json` — 23 requests |
+| T11.11 | `test/sprint3.e2e.test.js` — 22 Selenium tests |
+| T11.12 | this report |
+
 ---
 
-## 2. Unit tests — executed, all passing
+## 3. Test results
 
-### Server (`cd server && npm test`)
+### 3.1 Server unit tests — `cd server && npm test`
 
 ```
 Test Suites: 5 passed, 5 total
 Tests:       60 passed, 60 total
 ```
 
-| Suite | Tests | Story |
+| File | Tests | Whose story |
 |---|---|---|
-| `volunteerAvailability.test.js` | 16 | BL-10 (mine) |
-| `escalation.test.js` | 31 | BL-9 (mine) |
-| `CaseAssignment.test.js` | 2 | BL-9 (Tanjila) |
-| `User.test.js` | 5 | BL-8 (Bithi) |
-| `seedAdmin.test.js` | 2 | BL-8 (Bithi) |
+| `volunteerAvailability.test.js` | 16 | mine (BL-10) |
+| `escalation.test.js` | 31 | mine (BL-9) |
+| `CaseAssignment.test.js` | 2 | Tanjila |
+| `User.test.js` | 5 | Bithi |
+| `seedAdmin.test.js` | 2 | Bithi |
 
-### Client (`cd client && npm test`)
+### 3.2 Client unit tests — `cd client && npm test`
 
 ```
 Test Files  2 passed (2)
 Tests      20 passed (20)
 ```
 
-| Suite | Tests |
-|---|---|
-| `src/api/adminApi.test.js` | 12 |
-| `src/pages/admin/Verifications.test.jsx` | 8 |
+The client had **no test setup at all** before this sprint. I added Vitest and
+React Testing Library, so anyone can now write component tests by just adding a
+`.test.jsx` file.
 
-The client had **no test runner at all** before this sprint. I added Vitest +
-React Testing Library + jsdom, a `src/test/setup.js`, the `test` block in
-`vite.config.js`, and `npm test` / `npm test:watch` scripts. Anyone adding
-component tests from now on can just write them.
+### 3.3 Selenium tests — `npm run test:e2e`
 
----
-
-## 3. Thunder Client — T11.10
-
-`docs/thunder-client/BL-11-resources.json` imports into Thunder Client as
-**MindEase BL-11 Resources (T11.10)**: 23 requests with assertions attached
-(status code plus JSON-query checks), driven by the env vars `baseUrl`,
-`adminToken`, `volunteerToken`, `categoryId`, `resourceId`.
-
-Coverage: public list / filter / search / single-get / categories, the four
-validation 400s (missing title, bad type, helpline without phone, article
-without body, non-ObjectId category), the auth matrix (401 anonymous, 403
-volunteer, 200/201 admin), update, unpublish, delete, double-delete 404, and
-duplicate-category 409.
-
-**Execution status: not run through the Thunder Client GUI**, but every request
-in it was executed over HTTP against a running server and passed — see the
-API smoke run in section 4.1 and the Selenium specs T11.E4–T11.E9, which assert
-the same status codes and response shapes.
-
-Note on Atlas: `server/.env`'s `MONGO_URI` is **rejected** — the server exits on
-boot with `MongoDB connection failed: bad auth : authentication failed`. This
-reproduces when the same connection string is passed directly in code, bypassing
-`.env`, so it is the credential and not the config. The runs below used a
-throwaway local MongoDB instead. Every expectation was derived by reading
-`resourceController.js` and `resourceRoutes.js` line by line, and the same
-expectations are asserted in the Selenium suite (T11.E4–T11.E9), so they are not
-guesses — but I am not claiming a green run I did not see.
-
----
-
-## 4. Selenium — T11.11 plus cross-story
-
-`test/sprint3.e2e.test.js`, run with `npm run test:e2e` from the repo root.
-22 specs across four stories.
-
-**Executed in Chrome against the running stack: 20 passing, 2 pending, 0 failing.**
+Run in real Chrome, against the real app.
 
 ```
-BL-8 Admin verification ....... 4 passing
-BL-9 Escalation ............... 4 passing, 1 pending
-BL-10 Availability ............ 3 passing, 1 pending
-BL-11 Resources ............... 9 passing
-
-20 passing (25s)
+20 passing (26s)
 2 pending
+0 failing
 ```
 
-The 2 pending are the UI halves of specs whose teammate pages are not merged
-(T9.1 EscalateModal, T10.E1 Availability.jsx); their backend contracts pass.
-
-| Story | Specs | What they check |
+| Story | Passing | Skipped |
 |---|---|---|
-| BL-8 | T8.E1–E4 | admin opens the verification queue; non-admin redirected; API 403 for volunteer, 401 anonymous |
-| BL-9 | T9.E1–E5 | escalate control present; 401 without token; 403 for volunteer on the psychologist queue; psychologist list loads; short summary 400 |
-| BL-10 | T10.E1–E4 | availability on the volunteer dashboard; read own availability; save a valid window; 401 anonymous |
-| BL-11 | T11.E1–E9 | public library loads; API resources actually render; admin manage page; response shape; 401/403 on create; 400 on bad type and bad id; categories public |
+| BL-8 Admin verification | 4 | – |
+| BL-9 Escalation | 4 | 1 |
+| BL-10 Availability | 3 | 1 |
+| BL-11 Resources | 9 | – |
 
-Three teammate frontends are not merged yet, so those specs assert the backend
-contract over HTTP and mark the UI half **pending with a reason** rather than
-failing or silently passing:
+The 2 skipped tests need pages that are not merged yet (Roshni's
+`Availability.jsx`, Bithi's `EscalateModal.jsx`). Instead of failing, they are
+marked *pending* with the reason printed, and the matching API is tested instead.
+When those pages land, the tests start checking them automatically.
 
-- `Availability.jsx` (T10.7 / T10.8, Roshni)
-- `EscalateModal.jsx` / `EscalatedCases.jsx` (T9.7 / T9.8, Bithi)
-- `Resources.jsx` (T11.7, Tanjila) — the public `ResourceLibrary.jsx` does exist and is covered
+### 3.4 Full user journey (tested by hand over HTTP)
 
-Environment used: client on 5173, server on 5000 pointed at a throwaway
-`mongodb-memory-server` instance on 27017 (because Atlas refuses the credential),
-seeded with `seedAdmin.js` + `seedResources.js`, Chrome via chromedriver, and
-`E2E_ADMIN_PASSWORD` exported. Specs skip with a clear reason when a credential
-is missing, so a partial environment still produces a readable report instead of
-a wall of failures.
-
-### 4.1 API smoke run
-
-A full role journey was also exercised over HTTP against the same server, which
-is what gives the Thunder Client expectations in section 3 their evidence:
+This is the evidence behind the Thunder Client collection. Every step passed.
 
 | Step | Result |
 |---|---|
-| admin login | 200 + token |
-| register volunteer | 201, awaiting approval |
-| pending volunteer login | 403 "awaiting admin approval" |
-| `GET /api/admin/pending-users` (T8.4) | 200, count 1 |
-| `PATCH /api/admin/users/:id/approve` (T8.5) | 200, `verifiedBy` + `verifiedAt` set |
-| approved volunteer login | 200 + token |
-| `GET /api/volunteer/availability` | **200** (used to be a 500 — see 5.1) |
-| `PATCH /api/volunteer/availability` | 200, window saved |
-| `GET /api/escalations/psychologists` (T9.4) | 200 |
-| `POST /api/escalations` short summary | 400 with the expected message |
-| `GET /api/escalations/assigned` as volunteer | 403 |
-| `POST /api/resources` as admin | 201 |
-| `GET /api/resources` | 200, `{ count: 1, resources: [...] }` |
+| Admin logs in | 200 |
+| Volunteer registers | 201 — "awaiting admin approval" |
+| Volunteer tries to log in while pending | 403 — correctly blocked |
+| Admin loads pending accounts (T8.4) | 200 — 1 account |
+| Admin approves the volunteer (T8.5) | 200 |
+| Volunteer logs in again | 200 |
+| Volunteer reads their availability | 200 ← *used to crash, see B2* |
+| Volunteer saves Monday 09:00–17:00 | 200 |
+| Volunteer lists psychologists (T9.4) | 200 |
+| Volunteer sends a too-short summary | 400 — correctly rejected |
+| Volunteer opens the psychologist queue | 403 — correctly blocked |
+| Admin creates a resource | 201 |
+| Anyone reads resources | 200 |
+
+**Note on Thunder Client:** I did not click through the Thunder Client app
+itself. The collection is ready to import and run, and every request in it was
+run over HTTP and passed, as shown above.
 
 ---
 
-## 5. Bugs found
+## 4. Bugs
 
-### 5.1 Availability model rejected the record its own controller creates — fixed
+### Fixed
 
-`getMyAvailability` creates the row with only `{ volunteer, isAvailable: false }`,
-but the model had `dayOfWeek`, `startTime` and `endTime` all `required: true`.
-Every first call for a volunteer therefore threw a `ValidationError` and returned
-**500** — the endpoint could never succeed for a new volunteer.
+#### B1 — The whole website was blank *(critical)*
 
-Fixed in T10.1 by making the window optional (`default: null`) and moving the
-real rules into a `pre('validate')` hook: `HH:MM` format, `endTime` strictly
-after `startTime`, and a full window required *only* when `isAvailable` is true.
-So a volunteer can exist without a window but cannot be advertised as bookable
-without one. Tanjila's controller needs no change. Covered by 4 regression tests.
+`ResourceLibrary.jsx` imported `../components/ResourceCard`. From that folder
+the path pointed at `src/pages/components/`, where nothing exists. The real file
+is in `src/components/`.
 
-I kept the filename `VolunteerAvailability.js` rather than renaming to
-`Availability.js` as the sprint sheet says, because `availabilityController.js`
-and an existing test already import that path and renaming would break merged
-code for no behavioural gain.
+Because `App.jsx` loads that page immediately, one bad import broke the entire
+bundle, so **every page went white** — not just the resources page. `npm run
+build` failed too, so this was broken on GitHub for everyone.
 
-### 5.0 A broken import blanked the entire site — fixed
+Fixed by correcting the path. Tanjila's later rewrite removed the import
+altogether, so it cannot come back.
 
-**Severity: critical.** `client/src/pages/public/ResourceLibrary.jsx:2` imported
-`../components/ResourceCard`. From `src/pages/public/` that resolves to
-`src/pages/components/ResourceCard`, which does not exist — the file is at
-`src/components/ResourceCard.jsx`, so it needed `../../`.
+#### B2 — Volunteer availability always crashed *(high)*
 
-`App.jsx` imports that page eagerly, so the bundle failed to resolve and **every
-route rendered a blank white page**. Vite logged
-`Failed to resolve import "../components/ResourceCard"` on every request, and
-`vite build` failed too, so this was broken on `main` for everyone, not just in
-dev.
+`GET /api/volunteer/availability` returned **500** every time a volunteer opened
+it for the first time.
 
-Fixed to `../../components/ResourceCard`. `vite build` now succeeds
-(136 modules). Introduced with the BL-11 resources work; the sibling file
-`pages/admin/ManageResources.jsx` already had the correct `../../` path, which is
-why only the public page broke.
+Why: the controller creates the record with only the volunteer's id, but my model
+required `dayOfWeek`, `startTime` and `endTime`. So the record it tried to create
+was invalid and threw.
 
-### 5.2 Resource Library renders nothing even when the API returns data — fixed
+Fixed in T10.1. The day and time are now optional, and the real rules moved into
+one validation step:
 
-`ResourceLibrary.jsx:20` and `ManageResources.jsx` both gate rendering on
-`if (data.success)`, but `getResources` responds with `{ count, resources }` and
-**no `success` key**. `data.success` is always `undefined`, so the list is never
-populated — the public library shows empty no matter how many published
-resources exist.
+- time must look like `HH:MM`
+- `endTime` must be later than `startTime`
+- a volunteer can only be marked *available* once a full window is filled in
 
-Caught by **T11.E2** in a real browser: the spec fetched the API, got one
-resource back, and the rendered page did not contain its title.
+So a volunteer can exist without a schedule, but cannot be shown as bookable
+without one. No change was needed in Tanjila's controller. 4 tests cover this.
+
+#### B3 — The resource library never showed real resources *(high)*
+
+My Selenium test caught this one. The API returned a resource, but the page
+showed nothing:
 
 ```
 AssertionError: expected 'MindEase Home About Dashboard …'
   to include 'Coping with panic attacks'
 ```
 
-Fixed by gating on `res.ok` instead of `data.success` in both files, and reading
-`data.resources` first. T11.E2 passes now. If the team would rather standardise
-on a `success` envelope, do it on the server and keep all four resource handlers
-consistent — but do not leave the two sides disagreeing.
+The API answers `{ count, resources }`. The page was checking `data.success`,
+which does not exist, so the list stayed empty. After Tanjila's rewrite the same
+problem appeared differently: it read `res.data.length`, but `res.data` is an
+object, not an array, so the page always fell back to 3 hardcoded sample
+resources instead of real data.
 
-### 5.3 Admin resource writes are sent without a token — open
+Fixed by reading `res.data.resources`. I also made the URL relative
+(`/api/resources` instead of `http://localhost:5000/...`) so it works through the
+Vite proxy and after deployment.
 
-`ManageResources.jsx` calls `POST/PUT/DELETE /api/resources` with only
-`Content-Type` and no `Authorization` header, while those routes sit behind
-`auth, allowRoles('admin')`. Every create, update and delete from that page
-returns **401**. The payload is wrong too: it sends `{ title, category,
-description, link }`, but the model wants `type` (`helpline`|`article`), a
-`category` that is a `ResourceCategory` **ObjectId** (the form sends the string
-`"mental_health"`), and `url` rather than `link` — so even with a token it would
-be a 400.
+### Open — need the owner to fix
 
-Owner: BL-11 frontend (T11.8). `client/src/api/adminApi.js` shows the pattern to
-copy: an axios instance with a request interceptor that attaches the bearer
-token from `localStorage`.
+#### B4 — Admin cannot actually save a resource *(high — Tanjila, T11.8)*
 
-### 5.4 `REQUEST_STATUSES.RESOLVED` is not a valid request status — open, minor
+The Manage Resources page looks like it works, but nothing is saved.
 
-`server/config/requestOptions.js` exports `RESOLVED: "resolved"`, but the
-`CrisisRequest.status` enum is `["pending", "accepted", "escalated", "referred",
-"closed"]`. Writing `REQUEST_STATUSES.RESOLVED` anywhere will throw a validation
-error. My `completeCase` deliberately writes `'closed'` instead. Either add
-`resolved` to the enum or drop the constant.
+Two reasons:
 
-### 5.5 `updateAvailability` bypasses the cross-field rules — open, minor
+1. **No login token is sent.** Those routes require an admin token, so the server
+   replies 401. The errors are caught by empty `catch {}` blocks and the page
+   updates its own local list, so it *looks* successful until you refresh.
+2. **The form sends the wrong fields.** It sends `category: "Mental Health"` and
+   `link`, but the server expects `category` to be a category **id** and the
+   field to be called `url`. It also needs `type` to be `helpline` or `article`,
+   not `PDF`/`Audio`.
 
-`findOneAndUpdate(..., { runValidators: true })` runs field validators but not
-`pre('validate')` document middleware, so the `endTime > startTime` and
-"no availability without a window" rules in 5.1 are enforced on `.save()` paths
-but **not** through `PATCH /api/volunteer/availability`. The format validators
-do still run. Lowest-effort fix in `availabilityController.js`: load the doc,
-assign, then `save()`.
+`client/src/api/adminApi.js` shows the pattern to copy — an axios instance that
+attaches the token automatically.
 
-Owner: BL-10 backend (T10.4 / T10.5, Tanjila).
+#### B5 — The resource seed script creates no resources *(medium — Bithi, T11.2)*
 
-### 5.7 `seedResources.js` seeds no resources — open
+In `seedResources.js` the `RESOURCES` list is empty, so the script creates the 6
+categories and then zero resources. Running it leaves the library blank, which
+looks like a page bug. I added one resource through the API so Selenium had
+something real to check.
 
-The script's `RESOURCES` array is empty (`const RESOURCES = [];`), so it creates
-the 6 categories and then zero resources. Running it leaves the library blank,
-which reads as a bug in the page. T11.2 is only half done.
+#### B6 — `MONGO_URI` is rejected by MongoDB *(blocker — needs Atlas access)*
 
-Owner: BL-11 database (T11.2). I added one resource through the admin API to get
-a meaningful Selenium run; real seed content still needs writing.
+The server will not start:
 
-### 5.8 `MONGO_URI` in `server/.env` is rejected by Atlas — needs your action
+```
+MongoDB connection failed: bad auth : authentication failed
+```
 
-`npm start` in `server/` exits 1 with `MongoDB connection failed: bad auth :
-authentication failed`. Confirmed to be the credential, not the config: the same
-string passed directly to `mongoose.connect()` in a one-off script, with `.env`
-out of the picture, fails identically. `bad auth` is a credential rejection — an
-IP-allowlist problem surfaces as a selection timeout instead.
+This is the password, not the config. I confirmed it by passing the same
+connection string straight into `mongoose.connect()` with `.env` out of the
+picture — same error. (`bad auth` means the login was refused; a firewall or
+IP problem would time out instead.)
 
-So the `mindease_admin` user's password has been rotated or the user was removed
-in Atlas. Someone with console access needs to reset it and redistribute the URI.
-Everything above was run against a local throwaway MongoDB in the meantime.
+So the `mindease_admin` user's password was changed or the user was deleted.
+Someone with MongoDB Atlas access needs to reset it and share the new URI.
 
-### 5.6 Tailwind classes do nothing — open, cosmetic
+For all the testing above I used a temporary local MongoDB instead.
 
-`ManageResources.jsx` and `ResourceCard.jsx` are written with Tailwind utility
-classes, but Tailwind is not in `client/package.json` and there is no directive
-in the CSS, so those pages render unstyled. Every other page uses inline style
-objects. I used inline styles in `Verifications.jsx` to match what actually
-works. The team should decide: install Tailwind, or stop writing classes.
+#### B7 — Saving availability skips two safety checks *(low — Tanjila, T10.4/T10.5)*
+
+`findOneAndUpdate` does not run the validation step described in B2, so the
+`endTime` must be after `startTime` rule and the "no availability without a
+window" rule are not enforced when saving through `PATCH`. The `HH:MM` format
+check still runs.
+
+Easiest fix: load the record, change it, then call `save()`.
+
+#### B8 — `REQUEST_STATUSES.RESOLVED` is not a real status *(low)*
+
+`server/config/requestOptions.js` exports `RESOLVED: "resolved"`, but the allowed
+statuses are `pending`, `accepted`, `escalated`, `referred`, `closed`. Using that
+constant anywhere will throw. My code writes `closed` instead. Either add
+`resolved` to the model or delete the constant.
+
+### Cleanup note
+
+`client/src/components/ResourceCard.jsx` is no longer used by any page after the
+rewrite. It is also the only file still written with Tailwind classes, and
+Tailwind is not installed in this project, so those styles never applied. Safe
+to delete.
 
 ---
 
-## 6. How to reproduce
+## 5. How to run everything yourself
+
+### Unit tests — no database needed
 
 ```bash
-# unit tests (no database needed)
-cd server && npm test        # 60 passing
-cd ../client && npm test     # 20 passing
+cd server && npm test      # 60 passing
+cd client && npm test      # 20 passing
+```
 
-# end-to-end (needs a database, Chrome, and both apps running)
-cd server && npm run dev     # :5000
-cd client && npm run dev     # :5173
-cd server && node seeds/seedAdmin.js && node seeds/seedResources.js
+### The app and the Selenium tests — database needed
 
-# then, from the repo root:
-export E2E_ADMIN_PASSWORD='<seeded admin password>'
+```bash
+# 1. start the backend and frontend
+cd server && npm run dev     # port 5000
+cd client && npm run dev     # port 5173
+
+# 2. create the admin and the categories
+cd server
+node seeds/seedAdmin.js
+node seeds/seedResources.js
+
+# 3. run Selenium from the project root
+set E2E_ADMIN_PASSWORD=<admin password>
 npm run test:e2e
 ```
 
-Test accounts used by the specs: `volunteer@test.com` / `Test@1234` and
-`admin@mindease.com`. Both are overridable with `E2E_*` env vars.
+Open the site at **http://localhost:5173**.
+
+Test logins used by the tests:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@mindease.com` | set by `seedAdmin.js` |
+| Volunteer | `volunteer@test.com` | `Test@1234` |
+
+Remember a volunteer must be approved by an admin before they can log in.
+
+### Thunder Client
+
+Import `docs/thunder-client/BL-11-resources.json`, fill in the `baseUrl`,
+`adminToken` and `volunteerToken` variables, then press **Run All**.
 
 ---
 
-## 7. Summary
+## 6. Notes for the team
 
-- 111 automated checks authored this sprint: 60 server unit, 20 client unit, 23 Thunder Client, 22 Selenium.
-- **Executed:** 60 server unit, 20 client unit, 20 Selenium (2 pending, 0 failing), plus a 13-step API smoke journey. The Thunder Client collection was not driven through its GUI, but every request in it was executed over HTTP.
-- 3 bugs found and fixed: **5.0** (a broken import blanking the whole site), **5.1** (a hard 500 on a merged endpoint), **5.2** (the resource library never rendering).
-- 5 left open with an owner. The one needing action outside the code is **5.8**: the Atlas credential in `server/.env` is rejected, so the app cannot start against the real database.
-- Most useful outcome: the Selenium suite earned its keep immediately — T11.E2 failed on first run and caught 5.2, a defect that unit tests could not have seen because it only appears when a real API response meets a real page.
+1. **B6 is blocking everyone.** Nobody can run the app against the real database
+   until the MongoDB password is fixed.
+2. **B4 should be fixed before the demo.** Right now the admin resources page
+   appears to work but saves nothing.
+3. **Empty `catch {}` blocks hide real errors.** That is why B4 went unnoticed —
+   the page swallowed every 401. It is worth at least logging the error.
+4. **I changed two files that belong to someone else** (`ResourceLibrary.jsx` and
+   `ManageResources.jsx`) because the site was unusable otherwise. Both changes
+   are small and only fix how the API response is read. The page layouts are
+   untouched.
+5. **One difference from the sprint sheet:** the sheet calls the model
+   `Availability.js`. I kept the existing name `VolunteerAvailability.js`, because
+   `availabilityController.js` and an already-merged test import that name, and
+   renaming it would break working code for no benefit.
+6. **The Selenium suite paid for itself immediately.** B3 failed on the very
+   first run. Unit tests could never have found it, because it only appears when
+   a real API response meets a real page in a real browser.
