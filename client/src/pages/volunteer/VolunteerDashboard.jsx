@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import ChatWindow from "../../components/chat/ChatWindow";
+import Availability from "../../components/Availability";
 import { getUserIdFromToken } from "../../utils/getUserId";
 
 const card = {
@@ -72,6 +73,8 @@ export default function VolunteerDashboard() {
 
       {message && <p style={{ color: "green" }}>{message}</p>}
       {error && <p style={{ color: "crimson" }}>{error}</p>}
+
+      <Availability />
 
       <h2>Your accepted cases</h2>
       {accepted.length === 0 && <p>No accepted cases yet.</p>}
