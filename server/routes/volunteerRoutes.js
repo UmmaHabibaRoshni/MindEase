@@ -1,17 +1,15 @@
 const express = require('express');
 const router = express.Router();
 
-// Import default auth function
-const auth = require('../middleware/auth'); 
+// Middleware imports
+const auth = require('../middleware/auth');
+const allowRoles = require('../middleware/role');
 
-// Import authorize/role middleware (check if exported as { authorize } or default)
-const { authorize } = require('../middleware/role'); 
-
-// Import controller functions
+// Controller imports
 const { getMyAvailability, updateAvailability } = require('../controllers/availabilityController');
 
-// Routes using 'auth' instead of 'protect'
-router.get("/availability", auth, authorize("volunteer"), getMyAvailability);
-router.patch("/availability", auth, authorize("volunteer"), updateAvailability);
+// Availability Routes
+router.get("/availability", auth, allowRoles("volunteer"), getMyAvailability);
+router.patch("/availability", auth, allowRoles("volunteer"), updateAvailability);
 
 module.exports = router;
