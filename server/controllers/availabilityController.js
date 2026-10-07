@@ -1,4 +1,4 @@
-const Availability = require("../models/Availability"); 
+const VolunteerAvailability = require('../models/VolunteerAvailability');
 
 // @desc    Get logged-in volunteer's availability
 // @route   GET /api/volunteer/availability
@@ -7,13 +7,12 @@ exports.getMyAvailability = async (req, res) => {
   try {
     const volunteerId = req.user.id || req.user._id;
 
-    let availability = await Availability.findOne({ volunteer: volunteerId });
+    let availability = await VolunteerAvailability.findOne({ volunteer: volunteerId });
 
-    
     if (!availability) {
-      availability = await Availability.create({
+      availability = await VolunteerAvailability.create({
         volunteer: volunteerId,
-        state: "offline",
+        isAvailable: false,
       });
     }
 
@@ -34,21 +33,19 @@ exports.getMyAvailability = async (req, res) => {
 // @access  Private (Approved Volunteer only)
 exports.updateAvailability = async (req, res) => {
   try {
-    const { state } = req.body;
+    const { isAvailable, dayOfWeek, startTime, endTime } = req.body;
     const volunteerId = req.user.id || req.user._id;
 
-    // Allowed status validation
-    const validStates = ["available", "busy", "offline"];
-    if (!state || !validStates.includes(state)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status. Must be one of: available, busy, offline",
-      });
-    }
+    const updateFields = {};
+    if (typeof isAvailable !== 'undefined') updateFields.isAvailable = isAvailable;
+    if (dayOfWeek) updateFields.dayOfWeek = dayOfWeek;
+    if (startTime) updateFields.startTime = startTime;
+    if (endTime) updateFields.endTime = endTime;
+    updateFields.updatedAt = Date.now();
 
-    const availability = await Availability.findOneAndUpdate(
+    const availability = await VolunteerAvailability.findOneAndUpdate(
       { volunteer: volunteerId },
-      { state, updatedAt: Date.now() },
+      updateFields,
       { new: true, upsert: true, runValidators: true }
     );
 
