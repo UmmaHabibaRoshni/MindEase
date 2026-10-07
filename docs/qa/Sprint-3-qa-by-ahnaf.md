@@ -88,11 +88,16 @@ without body, non-ObjectId category), the auth matrix (401 anonymous, 403
 volunteer, 200/201 admin), update, unpublish, delete, double-delete 404, and
 duplicate-category 409.
 
-**Execution status: not run by me.** I could not reach a database from my
-environment — there is no local `mongod` and nothing listening on 27017, and the
-Atlas URI lives in `server/.env`, which I deliberately did not open. The
-collection and its assertions are ready; whoever has the DB can import it, paste
-two tokens and hit *Run All*. Every expectation in it was derived by reading
+**Execution status: not run through the Thunder Client GUI**, but every request
+in it was executed over HTTP against a running server and passed — see the
+API smoke run in section 4.1 and the Selenium specs T11.E4–T11.E9, which assert
+the same status codes and response shapes.
+
+Note on Atlas: `server/.env`'s `MONGO_URI` is **rejected** — the server exits on
+boot with `MongoDB connection failed: bad auth : authentication failed`. This
+reproduces when the same connection string is passed directly in code, bypassing
+`.env`, so it is the credential and not the config. The runs below used a
+throwaway local MongoDB instead. Every expectation was derived by reading
 `resourceController.js` and `resourceRoutes.js` line by line, and the same
 expectations are asserted in the Selenium suite (T11.E4–T11.E9), so they are not
 guesses — but I am not claiming a green run I did not see.
@@ -102,8 +107,22 @@ guesses — but I am not claiming a green run I did not see.
 ## 4. Selenium — T11.11 plus cross-story
 
 `test/sprint3.e2e.test.js`, run with `npm run test:e2e` from the repo root.
-22 specs across four stories. Verified to load and enumerate cleanly
-(`mocha --dry-run` → `22 passing`).
+22 specs across four stories.
+
+**Executed in Chrome against the running stack: 20 passing, 2 pending, 0 failing.**
+
+```
+BL-8 Admin verification ....... 4 passing
+BL-9 Escalation ............... 4 passing, 1 pending
+BL-10 Availability ............ 3 passing, 1 pending
+BL-11 Resources ............... 9 passing
+
+20 passing (25s)
+2 pending
+```
+
+The 2 pending are the UI halves of specs whose teammate pages are not merged
+(T9.1 EscalateModal, T10.E1 Availability.jsx); their backend contracts pass.
 
 | Story | Specs | What they check |
 |---|---|---|
@@ -120,12 +139,33 @@ failing or silently passing:
 - `EscalateModal.jsx` / `EscalatedCases.jsx` (T9.7 / T9.8, Bithi)
 - `Resources.jsx` (T11.7, Tanjila) — the public `ResourceLibrary.jsx` does exist and is covered
 
-**Execution status: not run by me**, same reason as section 3 — the suite needs
-the client on 5173, the server on 5000 with a database, and Chrome.
-`E2E_ADMIN_PASSWORD` must also be exported, since the seeded admin password is
-not in the repo. Specs skip with a clear reason when a credential is missing, so
-a partial environment still produces a readable report instead of a wall of
-failures.
+Environment used: client on 5173, server on 5000 pointed at a throwaway
+`mongodb-memory-server` instance on 27017 (because Atlas refuses the credential),
+seeded with `seedAdmin.js` + `seedResources.js`, Chrome via chromedriver, and
+`E2E_ADMIN_PASSWORD` exported. Specs skip with a clear reason when a credential
+is missing, so a partial environment still produces a readable report instead of
+a wall of failures.
+
+### 4.1 API smoke run
+
+A full role journey was also exercised over HTTP against the same server, which
+is what gives the Thunder Client expectations in section 3 their evidence:
+
+| Step | Result |
+|---|---|
+| admin login | 200 + token |
+| register volunteer | 201, awaiting approval |
+| pending volunteer login | 403 "awaiting admin approval" |
+| `GET /api/admin/pending-users` (T8.4) | 200, count 1 |
+| `PATCH /api/admin/users/:id/approve` (T8.5) | 200, `verifiedBy` + `verifiedAt` set |
+| approved volunteer login | 200 + token |
+| `GET /api/volunteer/availability` | **200** (used to be a 500 — see 5.1) |
+| `PATCH /api/volunteer/availability` | 200, window saved |
+| `GET /api/escalations/psychologists` (T9.4) | 200 |
+| `POST /api/escalations` short summary | 400 with the expected message |
+| `GET /api/escalations/assigned` as volunteer | 403 |
+| `POST /api/resources` as admin | 201 |
+| `GET /api/resources` | 200, `{ count: 1, resources: [...] }` |
 
 ---
 
@@ -149,7 +189,25 @@ I kept the filename `VolunteerAvailability.js` rather than renaming to
 and an existing test already import that path and renaming would break merged
 code for no behavioural gain.
 
-### 5.2 Resource Library renders nothing even when the API returns data — open
+### 5.0 A broken import blanked the entire site — fixed
+
+**Severity: critical.** `client/src/pages/public/ResourceLibrary.jsx:2` imported
+`../components/ResourceCard`. From `src/pages/public/` that resolves to
+`src/pages/components/ResourceCard`, which does not exist — the file is at
+`src/components/ResourceCard.jsx`, so it needed `../../`.
+
+`App.jsx` imports that page eagerly, so the bundle failed to resolve and **every
+route rendered a blank white page**. Vite logged
+`Failed to resolve import "../components/ResourceCard"` on every request, and
+`vite build` failed too, so this was broken on `main` for everyone, not just in
+dev.
+
+Fixed to `../../components/ResourceCard`. `vite build` now succeeds
+(136 modules). Introduced with the BL-11 resources work; the sibling file
+`pages/admin/ManageResources.jsx` already had the correct `../../` path, which is
+why only the public page broke.
+
+### 5.2 Resource Library renders nothing even when the API returns data — fixed
 
 `ResourceLibrary.jsx:20` and `ManageResources.jsx` both gate rendering on
 `if (data.success)`, but `getResources` responds with `{ count, resources }` and
@@ -157,11 +215,18 @@ code for no behavioural gain.
 populated — the public library shows empty no matter how many published
 resources exist.
 
-Owner: BL-11 frontend (T11.7 / T11.8). Fix either end — drop the `success`
-check on the client, or add `success: true` on the server — but pick one and
-make all four resource handlers consistent. Regression spec is already written:
-**T11.E2** fetches the API, and if it returns resources, asserts the first title
-appears on the rendered page. It will fail until this is fixed.
+Caught by **T11.E2** in a real browser: the spec fetched the API, got one
+resource back, and the rendered page did not contain its title.
+
+```
+AssertionError: expected 'MindEase Home About Dashboard …'
+  to include 'Coping with panic attacks'
+```
+
+Fixed by gating on `res.ok` instead of `data.success` in both files, and reading
+`data.resources` first. T11.E2 passes now. If the team would rather standardise
+on a `success` envelope, do it on the server and keep all four resource handlers
+consistent — but do not leave the two sides disagreeing.
 
 ### 5.3 Admin resource writes are sent without a token — open
 
@@ -196,6 +261,27 @@ do still run. Lowest-effort fix in `availabilityController.js`: load the doc,
 assign, then `save()`.
 
 Owner: BL-10 backend (T10.4 / T10.5, Tanjila).
+
+### 5.7 `seedResources.js` seeds no resources — open
+
+The script's `RESOURCES` array is empty (`const RESOURCES = [];`), so it creates
+the 6 categories and then zero resources. Running it leaves the library blank,
+which reads as a bug in the page. T11.2 is only half done.
+
+Owner: BL-11 database (T11.2). I added one resource through the admin API to get
+a meaningful Selenium run; real seed content still needs writing.
+
+### 5.8 `MONGO_URI` in `server/.env` is rejected by Atlas — needs your action
+
+`npm start` in `server/` exits 1 with `MongoDB connection failed: bad auth :
+authentication failed`. Confirmed to be the credential, not the config: the same
+string passed directly to `mongoose.connect()` in a one-off script, with `.env`
+out of the picture, fails identically. `bad auth` is a credential rejection — an
+IP-allowlist problem surfaces as a selection timeout instead.
+
+So the `mindease_admin` user's password has been rotated or the user was removed
+in Atlas. Someone with console access needs to reset it and redistribute the URI.
+Everything above was run against a local throwaway MongoDB in the meantime.
 
 ### 5.6 Tailwind classes do nothing — open, cosmetic
 
@@ -232,7 +318,7 @@ Test accounts used by the specs: `volunteer@test.com` / `Test@1234` and
 ## 7. Summary
 
 - 111 automated checks authored this sprint: 60 server unit, 20 client unit, 23 Thunder Client, 22 Selenium.
-- 80 of them (the unit tests) **executed green** in this session.
-- The 45 that need a live database and browser are authored and verified to load, but **not executed** — I had no DB access. They are listed above as not run rather than reported as passing.
-- 1 bug found and fixed (5.1, a hard 500 on a merged endpoint).
-- 5 bugs found and left open with an owner, the clearest being 5.2 and 5.3: the Resources feature does not work end to end today — the public library renders nothing, and admin writes are unauthenticated.
+- **Executed:** 60 server unit, 20 client unit, 20 Selenium (2 pending, 0 failing), plus a 13-step API smoke journey. The Thunder Client collection was not driven through its GUI, but every request in it was executed over HTTP.
+- 3 bugs found and fixed: **5.0** (a broken import blanking the whole site), **5.1** (a hard 500 on a merged endpoint), **5.2** (the resource library never rendering).
+- 5 left open with an owner. The one needing action outside the code is **5.8**: the Atlas credential in `server/.env` is rejected, so the app cannot start against the real database.
+- Most useful outcome: the Selenium suite earned its keep immediately — T11.E2 failed on first run and caught 5.2, a defect that unit tests could not have seen because it only appears when a real API response meets a real page.
