@@ -35,12 +35,10 @@ function getUser() {
   }
 }
 
-
 function DashboardIndex() {
   const user = getUser();
   return <Navigate to={user ? `/dashboard/${user.role}` : "/login"} replace />;
 }
-
 
 function RequireRole({ role, children }) {
   const user = getUser();
@@ -73,8 +71,8 @@ export default function App() {
         <Route path="admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
         <Route path="new-request" element={<RequireRole role="seeker"><CrisisRequestForm /></RequireRole>} />
 
-        {/* Admin Specific Route */}
-        <Route path="resources" element={<RequireRole role="admin"><ManageResources /></RequireRole>} /> {/* 👈 Admin Manage Resources */}
+        {/* Admin Manage Resources Route */}
+        <Route path="resources" element={<RequireRole role="admin"><ManageResources /></RequireRole>} />
 
         {/* T8.8 - admin account verification queue */}
         <Route path="verifications" element={<RequireRole role="admin"><Verifications /></RequireRole>} />
