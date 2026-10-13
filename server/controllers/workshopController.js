@@ -166,3 +166,108 @@ exports.cancelWorkshop = async (req, res) => {
     handleError(err, res);
   }
 };
+
+// ---------- T12.5 seeker APIs ----------
+
+// GET /api/workshops/available  (seeker)
+exports.listAvailableWorkshops = async (req, res) => {
+  try {
+    const workshops = await Workshop.find({
+      status: "Scheduled",
+      date: { $gte: startOfToday() },
+    })
+      .populate("facilitator", "name")
+      .sort({ date: 1 });
+    res.json(workshops);
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
+// POST /api/workshops/:id/enroll  (seeker)
+exports.enroll = async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid workshop id" });
+    }
+
+    // take one seat atomically: two seekers can't both get the last one
+    const workshop = await Workshop.findOneAndUpdate(
+      {
+        _id: id,
+        status: "Scheduled",
+        date: { $gte: startOfToday() },
+        $expr: { $lt: ["$enrolledCount", "$capacity"] },
+      },
+      { $inc: { enrolledCount: 1 } }
+    );
+    if (!workshop) {
+      const w = await Workshop.findById(id);
+      if (!w) return res.status(404).json({ message: "Workshop not found" });
+      if (w.status !== "Scheduled" || w.date < startOfToday()) {
+        return res.status(400).json({ message: "Workshop is not open for enrollment" });
+      }
+      return res.status(409).json({ message: "Workshop is full" });
+    }
+
+    // re-activate a cancelled enrollment, or create a new one
+    let enrollment = await WorkshopEnrollment.findOneAndUpdate(
+      { workshop: id, seeker: req.user.id, status: "Cancelled" },
+      {
+        $set: {
+          status: "Enrolled",
+          enrolledAt: new Date(),
+          cancellationReason: null,
+          cancelledAt: null,
+        },
+      },
+      { new: true }
+    );
+    if (!enrollment) {
+      try {
+        enrollment = await WorkshopEnrollment.create({ workshop: id, seeker: req.user.id });
+      } catch (err) {
+        // couldn't enroll: give the seat back
+        await Workshop.updateOne({ _id: id }, { $inc: { enrolledCount: -1 } });
+        if (err.code === 11000) {
+          return res.status(409).json({ message: "You are already enrolled" });
+        }
+        throw err;
+      }
+    }
+    res.status(201).json({ message: "Enrolled", enrollment });
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
+// DELETE /api/workshops/:id/enroll  (seeker)
+exports.cancelEnrollment = async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid workshop id" });
+    }
+    const enrollment = await WorkshopEnrollment.findOneAndUpdate(
+      { workshop: id, seeker: req.user.id, status: "Enrolled" },
+      {
+        $set: {
+          status: "Cancelled",
+          cancelledAt: new Date(),
+          cancellationReason: req.body?.reason || "Cancelled by user",
+        },
+      },
+      { new: true }
+    );
+    if (!enrollment) return res.status(404).json({ message: "You are not enrolled" });
+
+    await Workshop.updateOne(
+      { _id: id, enrolledCount: { $gt: 0 } },
+      { $inc: { enrolledCount: -1 } }
+    );
+    res.json({ message: "Enrollment cancelled", enrollment });
+  } catch (err) {
+    handleError(err, res);
+  }
+};
