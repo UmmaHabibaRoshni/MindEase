@@ -3,6 +3,8 @@ const auth = require('../middleware/auth');
 const allowRoles = require('../middleware/role');
 const {
   getDashboardSummary,
+  listCases,
+  updateCaseStatus,
   getCaseDetail,
   addCaseNote,
   listCaseNotes,
@@ -15,6 +17,11 @@ router.use(auth, allowRoles('psychologist'));
 
 // T13.5
 router.get('/summary', getDashboardSummary);
+
+// Dashboard case list and accept / reject / complete.
+// '/cases' is declared before '/cases/:id' so the literal path always wins.
+router.get('/cases', listCases);
+router.patch('/cases/:id/status', updateCaseStatus);
 
 // T13.4
 router.get('/cases/:id', getCaseDetail);
