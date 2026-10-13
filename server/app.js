@@ -17,5 +17,6 @@ app.use('/api/resources', require('./routes/resourceRoutes'));
 app.use('/api/volunteer', require('./routes/volunteerRoutes'));
 app.use('/api/escalations', require('./routes/escalationRoutes'));
 app.use('/api/psychologist', require('./routes/psychologistRoutes'));
+app.use('/api/workshops', require('./routes/workshopRoutes'));
 
 module.exports = app;
