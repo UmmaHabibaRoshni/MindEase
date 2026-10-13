@@ -135,3 +135,114 @@ exports.listCaseNotes = async (req, res) => {
     return res.status(500).json({ message: 'Server error while loading the notes.' });
   }
 };
+
+// ---------------------------------------------------------------------------
+// Added for the dashboard frontend, which calls these two paths.
+// ---------------------------------------------------------------------------
+
+const CrisisRequest = require('../models/CrisisRequest');
+const { REQUEST_STATUSES } = require('../config/requestOptions');
+
+const CASE_STATUSES = CaseAssignment.schema.path('status').enumValues;
+const SORTABLE = ['createdAt', 'updatedAt', 'status'];
+const MAX_LIMIT = 100;
+
+// The frontend sends capitalised statuses ("Accepted"); the model stores them
+// lowercase. Normalise rather than make the client change.
+const normaliseStatus = (value) => String(value || '').trim().toLowerCase();
+
+// Which status a case may move to, and what that does to the crisis request.
+const TRANSITIONS = {
+  accepted: { from: ['pending'], request: null },
+  // A rejected case goes back to the volunteer so it is not left stranded.
+  rejected: { from: ['pending'], request: REQUEST_STATUSES.ACCEPTED },
+  completed: { from: ['accepted'], request: 'closed' },
+};
+
+/**
+ * GET /api/psychologist/cases
+ * Psychologist only.
+ * Query: status, page, limit, sortBy, sortOrder.
+ *
+ * Paginated because the dashboard asks for a page at a time.
+ */
+exports.listCases = async (req, res) => {
+  try {
+    const filter = { psychologist: req.user.id };
+
+    const status = normaliseStatus(req.query.status);
+    if (status && status !== 'all') {
+      if (!CASE_STATUSES.includes(status)) {
+        return res.status(400).json({ message: 'Unknown status filter.' });
+      }
+      filter.status = status;
+    }
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(req.query.limit, 10) || 20));
+
+    const sortBy = SORTABLE.includes(req.query.sortBy) ? req.query.sortBy : 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+    const [total, cases] = await Promise.all([
+      CaseAssignment.countDocuments(filter),
+      CaseAssignment.find(filter)
+        .populate('request', 'category urgency description status createdAt')
+        .populate('volunteer', 'name email')
+        .sort({ [sortBy]: sortOrder })
+        .skip((page - 1) * limit)
+        .limit(limit),
+    ]);
+
+    return res.json({
+      data: cases,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error while loading your cases.' });
+  }
+};
+
+/**
+ * PATCH /api/psychologist/cases/:id/status   body: { status, decisionReason }
+ * Psychologist only. Accept, reject or complete one of their own cases.
+ */
+exports.updateCaseStatus = async (req, res) => {
+  try {
+    const status = normaliseStatus(req.body.status);
+    const transition = TRANSITIONS[status];
+
+    if (!transition) {
+      return res.status(400).json({
+        message: `Status must be one of: ${Object.keys(TRANSITIONS).join(', ')}.`,
+      });
+    }
+
+    const assignment = await loadOwnCase(req, res);
+    if (!assignment) return undefined;
+
+    if (!transition.from.includes(assignment.status)) {
+      return res.status(409).json({
+        message: `Cannot change a case from ${assignment.status} to ${status}.`,
+      });
+    }
+
+    assignment.status = status;
+    const reason = (req.body.decisionReason || '').trim();
+    if (reason) assignment.decisionReason = reason;
+    await assignment.save();
+
+    if (transition.request) {
+      await CrisisRequest.findByIdAndUpdate(assignment.request, { status: transition.request });
+    }
+
+    return res.json({ message: `Case ${status}.`, data: assignment });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error while updating the case.' });
+  }
+};
