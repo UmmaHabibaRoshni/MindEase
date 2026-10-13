@@ -1,4 +1,5 @@
 const { Builder, By, until } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 const { expect } = require('chai');
 
 // Sprint 3 Selenium coverage, written by Ahnaf.
@@ -60,9 +61,16 @@ async function apiLogin(role) {
 
 async function uiLogin(driver, role) {
   const { email, password } = ACCOUNTS[role];
-  if (!password) return false;
+  if (!password) return 'no-password';
 
   await driver.get(`${BASE}/login`);
+
+  // Drop any session left by an earlier spec. Without this, logging in as a
+  // second role in the same browser races against the previous user's token
+  // still sitting in localStorage.
+  await driver.executeScript('try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}');
+  await driver.get(`${BASE}/login`);
+
   const emailInput = await driver.wait(until.elementLocated(By.css("input[name='email']")), 10000);
   await emailInput.clear();
   await emailInput.sendKeys(email);
@@ -73,9 +81,11 @@ async function uiLogin(driver, role) {
 
   await driver.findElement(By.css("button[type='submit']")).click();
 
-  // The app navigates to /dashboard/<role> on success.
+  // The app navigates to /dashboard/<role> on success. This has to be generous:
+  // the login round-trip is a bcrypt compare against a remote Atlas cluster, and
+  // the first calls after a cold start are much slower than later ones.
   try {
-    await driver.wait(until.urlContains('/dashboard/'), 10000);
+    await driver.wait(until.urlContains('/dashboard/'), 30000);
     return true;
   } catch {
     return false;
@@ -97,6 +107,26 @@ function pending(ctx, reason) {
   ctx.skip();
 }
 
+/**
+ * Signs in, and when it cannot, says why.
+ *
+ * A missing password is a skip. A password that is present but rejected is a
+ * real failure: reporting that as "not set" sent us hunting for a password we
+ * already had.
+ */
+async function requireLogin(ctx, driver, role) {
+  const result = await uiLogin(driver, role);
+
+  if (result === 'no-password') {
+    pending(ctx, `E2E_${role.toUpperCase()}_PASSWORD not set`);
+  }
+  if (result === false) {
+    throw new Error(
+      `${role} login failed for ${ACCOUNTS[role].email} - the password in the environment is wrong`
+    );
+  }
+}
+
 // ------------------------------------------------------------------- suites
 
 describe('MindEase Sprint 3 E2E (Selenium)', function () {
@@ -104,7 +134,24 @@ describe('MindEase Sprint 3 E2E (Selenium)', function () {
   let driver;
 
   before(async function () {
-    driver = await new Builder().forBrowser('chrome').build();
+    // Chrome's password manager puts a "Change your password - found in a data
+    // breach" dialog over the login form and swallows the submit, so every UI
+    // login silently fails. The test accounts are deliberately weak shared
+    // passwords, so Chrome flags them every time. Turn the whole thing off.
+    const options = new chrome.Options();
+    options.addArguments(
+      '--disable-features=PasswordLeakDetection,PasswordLeakToggleMove,AutofillServerCommunication',
+      '--disable-save-password-bubble',
+      '--no-first-run',
+      '--no-default-browser-check'
+    );
+    options.setUserPreferences({
+      credentials_enable_service: false,
+      'profile.password_manager_enabled': false,
+      'profile.password_manager_leak_detection': false,
+    });
+
+    driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
     await driver.manage().window().maximize();
   });
 
@@ -115,9 +162,7 @@ describe('MindEase Sprint 3 E2E (Selenium)', function () {
   // ============================================================== BL-8
   describe('BL-8 Admin verification', function () {
     it('T8.E1: an admin can open the verification queue', async function () {
-      if (!(await uiLogin(driver, 'admin'))) {
-        pending(this, 'E2E_ADMIN_PASSWORD not set');
-      }
+      await requireLogin(this, driver, 'admin');
 
       await driver.get(`${BASE}/dashboard/verifications`);
 
@@ -132,9 +177,7 @@ describe('MindEase Sprint 3 E2E (Selenium)', function () {
     });
 
     it('T8.E2: a non-admin is redirected away from the queue', async function () {
-      if (!(await uiLogin(driver, 'volunteer'))) {
-        pending(this, 'volunteer login failed');
-      }
+      await requireLogin(this, driver, 'volunteer');
 
       await driver.get(`${BASE}/dashboard/verifications`);
       await driver.wait(until.urlContains('/dashboard/'), 10000);
@@ -161,9 +204,7 @@ describe('MindEase Sprint 3 E2E (Selenium)', function () {
   // ============================================================== BL-9
   describe('BL-9 Escalation', function () {
     it('T9.E1: a volunteer sees the escalate control on an accepted case', async function () {
-      if (!(await uiLogin(driver, 'volunteer'))) {
-        pending(this, 'volunteer login failed');
-      }
+      await requireLogin(this, driver, 'volunteer');
 
       await driver.get(`${BASE}/dashboard/volunteer`);
 
@@ -225,9 +266,7 @@ describe('MindEase Sprint 3 E2E (Selenium)', function () {
   // ============================================================== BL-10
   describe('BL-10 Availability', function () {
     it('T10.E1: a volunteer can see their availability on the dashboard', async function () {
-      if (!(await uiLogin(driver, 'volunteer'))) {
-        pending(this, 'volunteer login failed');
-      }
+      await requireLogin(this, driver, 'volunteer');
 
       await driver.get(`${BASE}/dashboard/volunteer`);
 
@@ -306,9 +345,7 @@ describe('MindEase Sprint 3 E2E (Selenium)', function () {
     });
 
     it('T11.E3: the admin manage-resources page loads', async function () {
-      if (!(await uiLogin(driver, 'admin'))) {
-        pending(this, 'E2E_ADMIN_PASSWORD not set');
-      }
+      await requireLogin(this, driver, 'admin');
 
       await driver.get(`${BASE}/dashboard/resources`);
       await driver.sleep(1000);
