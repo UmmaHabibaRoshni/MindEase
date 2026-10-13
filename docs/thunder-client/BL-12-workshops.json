@@ -1,0 +1,445 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "MindEase BL-12 Workshops (T12.10)",
+  "dateExported": "2026-10-14T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "settings": {
+    "envVars": [
+      { "name": "baseUrl", "value": "http://localhost:5000" },
+      { "name": "facilitatorToken", "value": "<JWT from POST /api/auth/login as facilitator@test.com / Facilitator@12345>" },
+      { "name": "otherFacilitatorToken", "value": "<JWT of a second facilitator, for the ownership checks>" },
+      { "name": "seekerToken", "value": "<JWT of any seeker>" },
+      { "name": "workshopId", "value": "<set from the create response>" }
+    ]
+  },
+  "requests": [
+    {
+      "_id": "bl12-01",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "01 Create blocked without a token",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Anonymous probe workshop\",\n  \"description\": \"This should never be created because no token is sent.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/probe\",\n  \"capacity\": 20\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl12-02",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "02 Create blocked for a seeker",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 20000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Seeker probe workshop\",\n  \"description\": \"A seeker must not be able to create a workshop at all.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/probe\",\n  \"capacity\": 20\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "403" }]
+    },
+    {
+      "_id": "bl12-03",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "03 Facilitator creates a workshop",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 30000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Managing exam stress\",\n  \"description\": \"A practical session on grounding techniques for students under exam pressure.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/exam-stress\",\n  \"capacity\": 25,\n  \"tags\": [\"stress\", \"students\"]\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "json.workshop.status", "action": "equal", "value": "Scheduled" },
+        { "type": "json-query", "custom": "json.workshop.enrolledCount", "action": "equal", "value": "0" },
+        { "type": "json-query", "custom": "json.workshop.durationMinutes", "action": "equal", "value": "60" }
+      ]
+    },
+    {
+      "_id": "bl12-04",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "04 Title shorter than 5 characters is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 40000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Hi\",\n  \"description\": \"The title is too short so the model validation should reject this.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 10\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl12-05",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "05 Description shorter than 20 characters is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 50000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Short description test\",\n  \"description\": \"Too short\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 10\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl12-06",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "06 A date in the past is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 60000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Workshop in the past\",\n  \"description\": \"A workshop cannot be scheduled for a date that has already gone.\",\n  \"date\": \"2020-01-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 10\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "past" }
+      ]
+    },
+    {
+      "_id": "bl12-07",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "07 A time not in 12-hour format is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 70000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Bad time format\",\n  \"description\": \"The model expects a 12-hour time such as 10:30 AM, not 24-hour.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"14:30\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 10\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl12-08",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "08 An unknown mode is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 80000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Unknown mode test\",\n  \"description\": \"Mode must be one of Online, In-Person or Hybrid, nothing else.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Telepathy\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 10\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl12-09",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "09 Capacity of zero is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 90000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Zero capacity test\",\n  \"description\": \"A workshop with no seats at all should not be accepted.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 0\n}"
+      },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl12-10",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "10 Tags sent as a string instead of a list is 400",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 100000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Tags as a string\",\n  \"description\": \"Tags must be sent as a JSON list, not a comma separated string.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/x\",\n  \"capacity\": 10,\n  \"tags\": \"stress,students\"\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "list" }
+      ]
+    },
+    {
+      "_id": "bl12-11",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "11 Facilitator updates their own workshop",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}",
+      "method": "PATCH",
+      "sortNum": 110000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"title\": \"Managing exam stress (updated)\",\n  \"capacity\": 30\n}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.workshop.capacity", "action": "equal", "value": "30" }
+      ]
+    },
+    {
+      "_id": "bl12-12",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "12 Update with no editable field is 400",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}",
+      "method": "PATCH",
+      "sortNum": 120000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"enrolledCount\": 99,\n  \"status\": \"Completed\"\n}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "No valid fields" }
+      ]
+    },
+    {
+      "_id": "bl12-13",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "13 Another facilitator cannot update it",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}",
+      "method": "PATCH",
+      "sortNum": 130000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{otherFacilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"title\": \"Hijacked by another facilitator\"\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }]
+    },
+    {
+      "_id": "bl12-14",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "14 Update with a malformed id is 400",
+      "url": "{{baseUrl}}/api/workshops/not-an-id",
+      "method": "PATCH",
+      "sortNum": 140000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"title\": \"Does not matter\"\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }]
+    },
+    {
+      "_id": "bl12-15",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "15 Update of a missing workshop is 404",
+      "url": "{{baseUrl}}/api/workshops/000000000000000000000000",
+      "method": "PATCH",
+      "sortNum": 150000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"title\": \"Nowhere to apply this\"\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }]
+    },
+    {
+      "_id": "bl12-16",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "16 Capacity below the seats already taken is 400",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}",
+      "method": "PATCH",
+      "sortNum": 160000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"capacity\": 1\n}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "400" }],
+      "docs": "Only meaningful once seekers are enrolled, so run it after T12.5 lands. With an empty workshop this correctly returns 200."
+    },
+    {
+      "_id": "bl12-17",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "17 Cancel blocked without a token",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/cancel",
+      "method": "PATCH",
+      "sortNum": 170000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl12-18",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "18 Facilitator cancels their own workshop",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/cancel",
+      "method": "PATCH",
+      "sortNum": 180000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.workshop.status", "action": "equal", "value": "Cancelled" }
+      ]
+    },
+    {
+      "_id": "bl12-19",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "19 Cancelling twice is 400",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/cancel",
+      "method": "PATCH",
+      "sortNum": 190000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "already cancelled" }
+      ]
+    },
+    {
+      "_id": "bl12-20",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "20 A cancelled workshop cannot be edited",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}",
+      "method": "PATCH",
+      "sortNum": 200000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{\n  \"title\": \"Trying to edit a cancelled workshop\"\n}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "cannot be edited" }
+      ]
+    },
+    {
+      "_id": "bl12-21",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "21 PENDING T12.5 - seeker lists upcoming workshops",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "GET",
+      "sortNum": 210000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }],
+      "docs": "NOT IMPLEMENTED YET. T12.5 (Roshni) has not been merged - there is no GET route on /api/workshops, so this currently returns 404. Expectations written in advance from the sprint sheet: a seeker sees Scheduled workshops whose date has not passed."
+    },
+    {
+      "_id": "bl12-22",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "22 PENDING T12.5 - seeker enrolls",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
+      "method": "POST",
+      "sortNum": 220000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "201" }],
+      "docs": "NOT IMPLEMENTED YET (T12.5). The route name is a guess from the sprint sheet and must be confirmed against Roshni's implementation."
+    },
+    {
+      "_id": "bl12-23",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "23 PENDING T12.5 - enrolling twice is rejected",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
+      "method": "POST",
+      "sortNum": 230000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "409" }],
+      "docs": "NOT IMPLEMENTED YET (T12.5). The WorkshopEnrollment model has a unique index on {workshop, seeker}, so the API must turn the duplicate key error into a clean 409."
+    },
+    {
+      "_id": "bl12-24",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "24 PENDING T12.5 - enrolling in a full workshop is rejected",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
+      "method": "POST",
+      "sortNum": 240000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "409" }],
+      "docs": "NOT IMPLEMENTED YET (T12.5). Set capacity to 1, enrol one seeker, then try a second. Note the race condition flagged in the QA note: incrementEnrollment reads then saves, so two simultaneous enrolments can both pass the capacity check."
+    },
+    {
+      "_id": "bl12-25",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "25 PENDING T12.5 - seeker cancels their enrollment",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
+      "method": "DELETE",
+      "sortNum": 250000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }],
+      "docs": "NOT IMPLEMENTED YET (T12.5). Watch out: the unique index covers cancelled rows, so re-enrolling after a cancellation will fail unless the API reuses the existing record."
+    }
+  ]
+}
