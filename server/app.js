@@ -16,5 +16,6 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/resources', require('./routes/resourceRoutes'));
 app.use('/api/volunteer', require('./routes/volunteerRoutes'));
 app.use('/api/escalations', require('./routes/escalationRoutes'));
+app.use('/api/psychologist', require('./routes/psychologistRoutes'));
 
 module.exports = app;
