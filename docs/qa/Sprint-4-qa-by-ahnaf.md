@@ -16,17 +16,25 @@ and merged.
 |---|---|
 | Tasks assigned | **9** |
 | Tasks finished | **9** |
-| Checks written | **131** (84 unit, 25 Thunder Client, 22 Selenium) |
-| Checks that can run today | **126** |
-| **Passing** | **126** |
+| Checks written | **137** (84 unit, 26 Thunder Client, 27 Selenium) |
+| Checks that can run today | **136** |
+| **Passing** | **136** |
 | **Failing** | **0** |
-| Waiting on teammates' code | 5 |
-| Bugs found | **4** |
+| Held back by an open bug | 1 |
+| Bugs found | **5** |
+| Bugs since fixed | **2** |
 
-The five that cannot run are the seeker-enrollment and workshop-page checks.
-They are written and merged — they just have no code to test yet, because
-T12.5, T12.7 and T12.8 are not finished. They print the reason and skip rather
-than failing, so the suite stays honest.
+Nothing is waiting on a teammate any more. The seeker checks unblocked when
+T12.5 merged (PR #38) and the page checks when T12.7 and T12.8 merged (PR #41),
+both on 14 October — and neither needed a line changed to start working, which
+is what writing them in advance was for.
+
+The one check that still does not run is held up by bug B5, not by missing
+code. It prints the reason and skips rather than failing.
+
+Running the seeker checks for the first time also confirmed that **both
+high-severity bugs I reported before T12.5 was written are fixed** in the
+merged implementation.
 
 ---
 
@@ -85,10 +93,21 @@ T13.7 dashboard needed them and they were not in the original sheet.
 ### BL-12 — Workshops, testing (T12.10–T12.12)
 
 Covered in its own report: **[BL-12-workshops-qa-by-ahnaf.md](BL-12-workshops-qa-by-ahnaf.md)**.
-Short version: a 25-request Thunder Client collection, a 22-spec Selenium suite,
-and 4 bugs found. The Selenium suite cleans up after itself — every workshop it
+Short version: a 26-request Thunder Client collection, a 27-spec Selenium suite,
+and 5 bugs found. The Selenium suite cleans up after itself — every workshop it
 creates is cancelled in the `after` hook, because it runs against the team's
 shared database.
+
+Six of those specs cover the seeker APIs, written against T12.5 the day it
+merged. Two of them exist specifically to hold the fixes for B1 and B2 in
+place, so the bugs cannot quietly return if the enrollment controller is
+rewritten later.
+
+Four more cover the pages from T12.7 and T12.8. The strongest is T12.E21: it
+fills in the facilitator's create form in the browser, submits it, and then
+checks through the API that the workshop really reached the database with its
+time converted correctly — so the form, the conversion and the API are proven
+to work together, not just separately.
 
 ---
 
@@ -108,40 +127,53 @@ seedTestSeeker.test.js               — seeker seed
 
 Run with `cd server && npm test`.
 
-### API tests — 25 Thunder Client requests
+### API tests — 26 Thunder Client requests
 
-`docs/thunder-client/BL-12-workshops.json`. Requests 1–20 run today; 21–25 are
-written in advance for T12.5 and clearly labelled `PENDING T12.5`.
+`docs/thunder-client/BL-12-workshops.json`. All 26 run today. Requests 21–26
+were written in advance for T12.5 and corrected against Roshni's real routes
+once it merged — one URL had to change, from `/api/workshops` to
+`/api/workshops/available`.
 
-### End-to-end — 22 Selenium specs
+### End-to-end — 27 Selenium specs
 
 `test/sprint4.e2e.test.js`, run with `npm run test:e2e:sprint4` from the repo
-root. **17 passing, 5 pending, 0 failing** in Chrome against the real database.
+root. **26 passing, 1 pending, 0 failing** in Chrome against the real database.
 
 ### Everything together, on `main`
 
 | Suite | Result |
 |---|---|
-| Server unit tests (mine + teammates') | **230 passing, 17 suites** |
-| Client unit tests | **31 passing** |
+| Server unit tests (mine + teammates') | **335 passing, 21 suites** |
+| Client unit tests | **49 passing** |
 | Sprint 3 Selenium | 20 passing, 2 pending |
-| Sprint 4 Selenium | 17 passing, 5 pending |
+| Sprint 4 Selenium | 26 passing, 1 pending |
 | **Failing anywhere** | **0** |
 
 ---
 
 ## 4. Bugs found
 
-Four, all written up with suggested fixes in the BL-12 report. Two of them will
-break T12.5 the moment it is written, so they are worth fixing *before* that
-code, not after:
+Four, all written up with suggested fixes in the BL-12 report. I reported the
+first two before T12.5 was written, and the merged implementation handles both
+correctly — each now has a regression test holding it in place:
 
-| | Bug | Severity |
-|---|---|---|
-| **B1** | A seeker can never re-enroll after cancelling — the unique index covers cancelled rows | high, blocks T12.5 |
-| **B2** | Capacity can be exceeded — `incrementEnrollment()` reads, checks, then writes | high, blocks T12.5 |
-| **B3** | Date and time stored separately, so "upcoming workshops" cannot be ordered within a day | medium |
-| **B4** | Workshop enums are capitalised while the rest of the codebase is lowercase | low |
+| | Bug | Severity | Status |
+|---|---|---|---|
+| **B1** | A seeker could never re-enroll after cancelling — the unique index covers cancelled rows | high | **fixed**, held by T12.E23 |
+| **B2** | Capacity could be exceeded — `incrementEnrollment()` read, checked, then wrote | high | **fixed**, held by T12.E20 |
+| **B3** | Date and time stored separately, so "upcoming workshops" cannot be ordered within a day | medium | open |
+| **B4** | Workshop enums are capitalised while the rest of the codebase is lowercase | low | open |
+| **B5** | The seeker page forgets an enrollment on reload — it reads an `isEnrolled` flag the API never sends | medium | open, spec waiting |
+
+B5 was found while testing the new T12.8 page. A seeker who enrols, then comes
+back later, sees **Enroll** again instead of **Cancel enrollment**, and so
+cannot cancel an enrollment from an earlier visit. The fix is one extra query
+in `listAvailableWorkshops`; T12.E27 is already written against it and will
+start passing the day the flag is sent.
+
+One leftover: `incrementEnrollment()` is still on the `Workshop` model and
+still has the race. Nothing calls it any more, so it should be deleted before
+someone picks it up by mistake.
 
 ### Two things I also fixed along the way
 
@@ -157,18 +189,17 @@ code, not after:
 
 ## 5. What is not finished, and why
 
-Nothing of mine. These five checks are written and merged but have no code to
-run against:
+Nothing of mine, and nothing is waiting on a teammate's unwritten code any
+more. One check is held back by an open bug:
 
 | Check | Waiting on | Owner |
 |---|---|---|
-| Seeker lists upcoming workshops | no `GET /api/workshops` exists | T12.5 |
-| Enroll, and no double-enroll | no enrollment endpoint | T12.5 |
-| Capacity limit | no enrollment endpoint | T12.5 |
-| Create Workshop form | `CreateWorkshop.jsx` not written | T12.7 |
-| Seeker Workshops page | `Workshops.jsx` not written | T12.8 |
+| T12.E27 enrollment survives a reload | bug B5 — the API does not send `isEnrolled` | T12.5 or T12.8 |
 
-They need no editing. The day that code is merged, they start running.
+Writing the checks before the code existed paid off twice in one day. The three
+seeker checks went from pending to passing the moment T12.5 merged, and the
+page checks the moment T12.7 and T12.8 merged — in both cases without a single
+line being edited.
 
 ---
 
@@ -182,8 +213,8 @@ node seeds/seedFacilitator.js     # facilitator@test.com / Facilitator@12345
 node seeds/seedTestSeeker.js      # seeker@test.com      / Seeker@12345
 
 # unit tests
-cd server && npm test             # 230 passing
-cd client && npm test             #  31 passing
+cd server && npm test             # 335 passing
+cd client && npm test             #  49 passing
 
 # end-to-end (both apps must be running)
 cd server && npm run dev          # :5000
