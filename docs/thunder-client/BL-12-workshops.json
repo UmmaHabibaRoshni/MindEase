@@ -380,66 +380,91 @@
       "_id": "bl12-21",
       "colId": "bl12",
       "containerId": "",
-      "name": "21 PENDING T12.5 - seeker lists upcoming workshops",
-      "url": "{{baseUrl}}/api/workshops",
+      "name": "21 Seeker lists available workshops",
+      "url": "{{baseUrl}}/api/workshops/available",
       "method": "GET",
       "sortNum": 210000,
       "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
       "params": [],
       "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }],
-      "docs": "NOT IMPLEMENTED YET. T12.5 (Roshni) has not been merged - there is no GET route on /api/workshops, so this currently returns 404. Expectations written in advance from the sprint sheet: a seeker sees Scheduled workshops whose date has not passed."
+      "docs": "T12.5, merged 14 Oct (PR #38). Returns Scheduled workshops whose date has not passed, sorted by date, with the facilitator's name populated. Note the route is /available, not /api/workshops - this request was written in advance against a guessed name and corrected once T12.5 landed."
     },
     {
       "_id": "bl12-22",
       "colId": "bl12",
       "containerId": "",
-      "name": "22 PENDING T12.5 - seeker enrolls",
+      "name": "22 Seeker enrolls",
       "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
       "method": "POST",
       "sortNum": 220000,
       "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
       "params": [],
-      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "201" }],
-      "docs": "NOT IMPLEMENTED YET (T12.5). The route name is a guess from the sprint sheet and must be confirmed against Roshni's implementation."
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "json.enrollment.status", "action": "equal", "value": "Enrolled" }
+      ],
+      "docs": "T12.5. Takes a seat with one atomic update, then creates or reactivates the enrollment row."
     },
     {
       "_id": "bl12-23",
       "colId": "bl12",
       "containerId": "",
-      "name": "23 PENDING T12.5 - enrolling twice is rejected",
+      "name": "23 Enrolling twice is rejected",
       "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
       "method": "POST",
       "sortNum": 230000,
       "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
       "params": [],
-      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "409" }],
-      "docs": "NOT IMPLEMENTED YET (T12.5). The WorkshopEnrollment model has a unique index on {workshop, seeker}, so the API must turn the duplicate key error into a clean 409."
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "409" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "already enrolled" }
+      ],
+      "docs": "Run straight after request 22. The unique index on {workshop, seeker} raises a duplicate key error, which the API turns into a clean 409 and gives the seat back."
     },
     {
       "_id": "bl12-24",
       "colId": "bl12",
       "containerId": "",
-      "name": "24 PENDING T12.5 - enrolling in a full workshop is rejected",
+      "name": "24 Enrolling in a full workshop is rejected",
       "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
       "method": "POST",
       "sortNum": 240000,
-      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "headers": [{ "name": "Authorization", "value": "Bearer {{otherSeekerToken}}" }],
       "params": [],
-      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "409" }],
-      "docs": "NOT IMPLEMENTED YET (T12.5). Set capacity to 1, enrol one seeker, then try a second. Note the race condition flagged in the QA note: incrementEnrollment reads then saves, so two simultaneous enrolments can both pass the capacity check."
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "409" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "full" }
+      ],
+      "docs": "Bug B2 in the QA report. Create a workshop with capacity 1, enrol one seeker, then run this as a second seeker. The merged implementation takes the seat with findOneAndUpdate and an $expr capacity guard, so the count can never pass capacity. Needs a second seeker token in otherSeekerToken."
     },
     {
       "_id": "bl12-25",
       "colId": "bl12",
       "containerId": "",
-      "name": "25 PENDING T12.5 - seeker cancels their enrollment",
+      "name": "25 Seeker cancels their enrollment",
       "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
       "method": "DELETE",
       "sortNum": 250000,
       "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
       "params": [],
-      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }],
-      "docs": "NOT IMPLEMENTED YET (T12.5). Watch out: the unique index covers cancelled rows, so re-enrolling after a cancellation will fail unless the API reuses the existing record."
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.enrollment.status", "action": "equal", "value": "Cancelled" }
+      ],
+      "docs": "Frees the seat as well as marking the row cancelled."
+    },
+    {
+      "_id": "bl12-26",
+      "colId": "bl12",
+      "containerId": "",
+      "name": "26 Re-enrolling after cancelling works",
+      "url": "{{baseUrl}}/api/workshops/{{workshopId}}/enroll",
+      "method": "POST",
+      "sortNum": 260000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "201" }],
+      "docs": "Bug B1 in the QA report. Run straight after request 25. The unique index covers cancelled rows, so a fresh insert would fail with a duplicate key error - the merged implementation reactivates the cancelled row instead. If this ever returns 409, B1 has come back."
     }
   ]
 }
