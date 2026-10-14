@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -17,6 +18,8 @@ import NgoDashboard from "./pages/ngo/NgoDashboard";
 import FacilitatorDashboard from "./pages/facilitator/FacilitatorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CrisisRequestForm from "./pages/seeker/CrisisRequestForm";
+import Workshops from "./pages/seeker/Workshops";
+import CreateWorkshop from "./pages/facilitator/CreateWorkshop";
 
 function Placeholder({ title }) {
   return (
@@ -70,6 +73,12 @@ export default function App() {
         <Route path="facilitator" element={<RequireRole role="facilitator"><FacilitatorDashboard /></RequireRole>} />
         <Route path="admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
         <Route path="new-request" element={<RequireRole role="seeker"><CrisisRequestForm /></RequireRole>} />
+
+        {/* T12.8 - seeker workshops list with enroll / cancel */}
+        <Route path="workshops" element={<RequireRole role="seeker"><Workshops /></RequireRole>} />
+
+        {/* T12.7 - facilitator create workshop form */}
+        <Route path="workshops/new" element={<RequireRole role="facilitator"><CreateWorkshop /></RequireRole>} />
 
         {/* Admin Manage Resources Route */}
         <Route path="resources" element={<RequireRole role="admin"><ManageResources /></RequireRole>} />
