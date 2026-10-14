@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getMyReferrals, readError } from "../../api/ngoApi";
 
@@ -118,6 +119,17 @@ export default function NgoDashboard() {
             <div style={{ marginTop: "12px" }}>
               <StatusBadge status={r.status} />
             </div>
+            <Link
+              to={`/dashboard/ngo/referrals/${r._id}`}
+              style={{
+                display: "inline-block",
+                marginTop: "12px",
+                color: "#2b6cb0",
+                fontSize: "14px",
+              }}
+            >
+              Open →
+            </Link>
           </div>
         ))
       )}
