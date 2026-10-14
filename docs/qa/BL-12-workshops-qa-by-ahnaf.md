@@ -280,8 +280,8 @@ facilitator and two seekers, paste the tokens into the env vars, then **Run All*
 
 | Suite | Result |
 |---|---|
-| Server unit tests | **305 passing** |
-| Client unit tests | **31 passing** |
+| Server unit tests | **335 passing** |
+| Client unit tests | **49 passing** |
 | Sprint 3 Selenium | **20 passing, 2 pending** |
 | Sprint 4 Selenium (this story) | **26 passing, 1 pending** |
 | **Failing anywhere** | **0** |
