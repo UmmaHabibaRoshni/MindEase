@@ -3,7 +3,8 @@
 **Tester:** Ahnaf Shakib
 **Date:** 14 October 2026
 **Tasks:** T12.10 (Thunder Client), T12.11 (Selenium), T12.12 (this note)
-**Updated** after T12.5 merged (PR #38) — the seeker half is now tested for real.
+**Updated** after T12.5 (PR #38) and T12.7/T12.8 (PR #41) merged — the whole
+story is now tested end to end.
 
 ---
 
@@ -11,17 +12,18 @@
 
 | | |
 |---|---|
-| Checks written | **51** (26 Thunder Client + 25 Selenium) |
-| Checks that can run today | **49** |
-| **Passing** | **49** |
+| Checks written | **53** (26 Thunder Client + 27 Selenium) |
+| Checks that can run today | **52** |
+| **Passing** | **52** |
 | **Failing** | **0** |
-| Blocked, waiting on teammates | 2 |
-| Bugs found | **4** |
+| Held back by an open bug | 1 |
+| Bugs found | **5** |
 | Bugs since fixed | **2** |
 
-Both halves of BL-12 now work. The facilitator APIs (T12.4) and the seeker
-enrollment APIs (T12.5) pass every check against the real database. Only the
-two UI specs are still waiting, on T12.7 and T12.8.
+**All of BL-12 is now covered.** The facilitator APIs (T12.4), the seeker
+enrollment APIs (T12.5) and both pages (T12.7, T12.8) pass every check against
+the real database. The one spec that does not run is waiting on bug B5, not on
+a teammate.
 
 ---
 
@@ -44,13 +46,13 @@ correctly. Request 26 is new — it is the regression test for B1.
 
 `test/sprint4.e2e.test.js`, run with `npm run test:e2e:sprint4`.
 
-**Executed in Chrome against the real database: 23 passing, 2 pending, 0 failing.**
+**Executed in Chrome against the real database: 26 passing, 1 pending, 0 failing.**
 
 ```
 Facilitator workshop APIs (T12.4) .... 17 passing
 Seeker enrollment APIs (T12.5) .......  3 passing
 Enrollment edge cases (T12.5) ........  3 passing
-Workshop pages (T12.7 / T12.8) .......  2 pending
+Workshop pages (T12.7 / T12.8) .......  3 passing, 1 pending
 ```
 
 What the facilitator specs cover:
@@ -74,6 +76,19 @@ What the six seeker specs cover:
 | T12.E23 | enroll → cancel → enroll again works, and still counts one seat |
 | T12.E24 | cancelling without being enrolled → 404 |
 | T12.E25 | no token → 401, facilitator → 403, bad id → 400, unknown id → 404 |
+
+What the four UI specs cover:
+
+| Spec | Check |
+|---|---|
+| T12.E21 | a facilitator fills the create form and the workshop reaches the database, with the time converted to the 12-hour value the API expects |
+| T12.E22 | a seeker cannot reach the facilitator create form |
+| T12.E26 | a seeker sees a newly created workshop listed, with an Enroll button |
+| T12.E27 | an enrolled seeker still sees "Cancel enrollment" after a reload — **pending on B5** |
+
+The form is driven through the native value setter rather than `sendKeys`,
+because React controlled inputs ignore a plain assignment and the date and time
+inputs only accept `sendKeys` in the browser's own locale format.
 
 **The suite cleans up after itself.** Every workshop it creates is titled
 `E2E TEST - ...` and cancelled in the `after` hook, because this runs against
@@ -164,6 +179,42 @@ and this already caused a real failure in BL-13, where the dashboard sent
 **Suggestion:** leave the model alone, but have T12.7 and T12.8 import the
 allowed values rather than retyping them.
 
+### B5 — The seeker page forgets an enrollment on reload *(medium, open)*
+
+`Workshops.jsx` decides which button to show from a flag the server never sends:
+
+```js
+list.forEach((w) => {
+  if (w.isEnrolled) next.add(w._id);
+});
+```
+
+`listAvailableWorkshops` returns the raw workshop documents — there is no
+`isEnrolled` anywhere in `server/`. So the set is only ever filled by the
+seeker's own clicks in that page session. After a refresh, a workshop the
+seeker has already joined shows **Enroll** again.
+
+It is not destructive: clicking it returns 409 and the page catches that and
+marks the workshop enrolled. But the seeker sees the wrong state until they
+click, and they cannot cancel an enrollment made in an earlier visit, because
+the Cancel button never appears.
+
+**Fix:** have `listAvailableWorkshops` look up the caller's enrollments and
+attach the flag — one extra query:
+
+```js
+const mine = await WorkshopEnrollment.find({
+  seeker: req.user.id, status: "Enrolled",
+}).distinct("workshop");
+const ids = new Set(mine.map(String));
+res.json(workshops.map((w) => ({ ...w.toObject(), isEnrolled: ids.has(String(w._id)) })));
+```
+
+T12.E27 is written against this and currently reports itself pending with the
+reason. It will pass the moment the flag is sent, with no edit needed.
+
+**Owner:** BL-12 backend (T12.5) or frontend (T12.8) — whoever gets there first.
+
 ---
 
 ## 4. Not bugs — checked and correct
@@ -191,15 +242,16 @@ Worth recording, because several of these looked wrong at first glance:
 
 | Check | Blocked by | Owner |
 |---|---|---|
-| T12.E21 Create Workshop form | `CreateWorkshop.jsx` not merged | T12.7 |
-| T12.E22 seeker Workshops page | `Workshops.jsx` not merged | T12.8 |
+| T12.E27 enrollment survives a reload | bug B5 — the API does not send `isEnrolled` | T12.5 or T12.8 |
 
-Both are written and will start running the moment the pages land; neither
-needs editing first. They skip with the reason printed rather than failing, so
-the suite stays honest and green.
+That is the only one left, and it is waiting on a bug rather than on unwritten
+code. It skips with the reason printed rather than failing, so the suite stays
+honest and green.
 
-Everything else that was blocked in the first version of this report is now
-unblocked and passing, because T12.5 merged on 14 October.
+Everything else that was blocked in the earlier versions of this report now
+runs and passes: the seeker checks unblocked when T12.5 merged (PR #38), and
+the page checks when T12.7 and T12.8 merged (PR #41), both on 14 October.
+Neither needed a line changed to start working.
 
 ---
 
@@ -228,12 +280,12 @@ facilitator and two seekers, paste the tokens into the env vars, then **Run All*
 
 | Suite | Result |
 |---|---|
-| Server unit tests | **230 passing** |
+| Server unit tests | **249 passing** |
 | Client unit tests | **31 passing** |
 | Sprint 3 Selenium | **20 passing, 2 pending** |
-| Sprint 4 Selenium (this story) | **23 passing, 2 pending** |
+| Sprint 4 Selenium (this story) | **26 passing, 1 pending** |
 | **Failing anywhere** | **0** |
 
-Both high-severity bugs are fixed and have a regression test each. The two
-remaining bugs are a design decision (B3) and a naming inconsistency (B4),
-neither of which blocks anyone.
+Both high-severity bugs are fixed and have a regression test each. Of the three
+still open, only B5 affects what a user sees, and it is a one-query fix with a
+spec already waiting for it.

@@ -519,40 +519,132 @@ describe('MindEase Sprint 4 E2E - BL-12 Workshops (Selenium)', function () {
   });
 
   // =================================================== workshop UI, T12.7/12.8
+  // T12.7 and T12.8 merged on 14 October (PR #41). The routes are
+  // /dashboard/workshops/new for the facilitator form and /dashboard/workshops
+  // for the seeker list.
   describe('Workshop pages (T12.7 / T12.8)', function () {
-    it('T12.E21: a facilitator sees a Create Workshop form', async function () {
-      await requireLogin(this, driver, 'facilitator');
-      await driver.get(`${BASE}/dashboard/workshops`);
+    // React controlled inputs ignore a plain value assignment, and date and
+    // time inputs ignore sendKeys unless the string matches the browser
+    // locale. Setting through the native setter and firing the event React
+    // listens for works for all of them.
+    async function setField(id, value) {
+      await driver.executeScript(
+        `const el = document.getElementById(arguments[0]);
+         const proto = el.tagName === 'TEXTAREA'
+           ? HTMLTextAreaElement.prototype
+           : HTMLInputElement.prototype;
+         Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, arguments[1]);
+         el.dispatchEvent(new Event('input', { bubbles: true }));`,
+        id,
+        value
+      );
+    }
 
-      const hasForm =
-        (await present(driver, By.css("input[name='title']"))) ||
-        (await present(
-          driver,
-          By.xpath("//*[contains(translate(., 'CREATE WORKSHOP', 'create workshop'), 'create workshop')]")
-        ));
-      if (!hasForm) {
-        pending(this, 'CreateWorkshop.jsx (T12.7) not merged yet');
+    // The form posts and redirects; poll the API until the workshop shows up.
+    async function waitForWorkshop(title, timeout = 10000) {
+      const token = await apiLogin('seeker');
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        const res = await api('/api/workshops/available', { token });
+        const found = (res.body || []).find((w) => w.title === title);
+        if (found) return found;
+        await new Promise((r) => setTimeout(r, 500));
       }
+      return null;
+    }
 
-      expect(hasForm).to.equal(true);
+    it('T12.E21: a facilitator creates a workshop through the form', async function () {
+      await requireLogin(this, driver, 'facilitator');
+      await driver.get(`${BASE}/dashboard/workshops/new`);
+      await driver.wait(until.elementLocated(By.id('title')), 15000);
+
+      const title = `${MARK} Booked from the T12.7 form`;
+      await setField('title', title);
+      await setField(
+        'description',
+        'A session booked through the create form, by the Selenium suite.'
+      );
+      await setField('date', futureDate());
+      await setField('time', '10:30');
+      await setField('locationOrLink', 'https://meet.example.com/e2e-form');
+
+      await driver.findElement(By.css("button[type='submit']")).click();
+
+      const created = await waitForWorkshop(title);
+      expect(created, 'the form did not create the workshop').to.not.equal(null);
+      createdIds.push(created._id);
+
+      // the form sends the 12-hour time the API expects, not the raw "10:30"
+      expect(created.time).to.equal('10:30 AM');
     });
 
-    it('T12.E22: a seeker sees the workshops page with an Enroll button', async function () {
+    it('T12.E22: the create form is closed to seekers', async function () {
       const token = await apiLogin('seeker');
-      if (!token) pending(this, 'no seeker account - run server/seeds/seedTestNgo.js');
+      if (!token) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      await requireLogin(this, driver, 'seeker');
+      await driver.get(`${BASE}/dashboard/workshops/new`);
+
+      // RequireRole should keep the form off the page for a seeker
+      const hasForm = await present(driver, By.id('title'), 3000);
+
+      expect(hasForm, 'a seeker reached the facilitator create form').to.equal(false);
+    });
+
+    it('T12.E26: a seeker sees workshops listed with an Enroll button', async function () {
+      const token = await apiLogin('seeker');
+      if (!token) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      const created = await createWorkshop({ title: `${MARK} Visible on the seeker page` });
+      expect(created.status).to.equal(201);
+
+      await requireLogin(this, driver, 'seeker');
+      await driver.get(`${BASE}/dashboard/workshops`);
+      await driver.wait(until.elementLocated(By.xpath("//h2[contains(., 'Workshops')]")), 15000);
+
+      const titleShown = await present(
+        driver,
+        By.xpath(`//*[contains(text(), 'Visible on the seeker page')]`),
+        10000
+      );
+      const hasEnroll = await present(
+        driver,
+        By.xpath("//button[contains(translate(., 'ENROLL', 'enroll'), 'enroll')]"),
+        5000
+      );
+
+      expect(titleShown, 'the new workshop was not listed').to.equal(true);
+      expect(hasEnroll, 'no Enroll button rendered').to.equal(true);
+    });
+
+    // B5 in the QA report. Workshops.jsx reads w.isEnrolled to decide whether
+    // to show Enroll or Cancel enrollment, but listAvailableWorkshops never
+    // sends that field, so the page forgets an enrollment on reload. The spec
+    // is written and will pass as soon as the API sends the flag.
+    it('T12.E27: an already-enrolled seeker sees Cancel enrollment after a reload', async function () {
+      const token = await apiLogin('seeker');
+      if (!token) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      const list = await api('/api/workshops/available', { token });
+      const sendsFlag = (list.body || []).some((w) => w.isEnrolled !== undefined);
+      if (!sendsFlag) {
+        pending(this, 'B5 - the API does not send isEnrolled yet, see the QA report');
+      }
+
+      const created = await createWorkshop({ title: `${MARK} Enrolled before reload` });
+      const id = created.body.workshop._id;
+      await api(`/api/workshops/${id}/enroll`, { method: 'POST', token });
 
       await requireLogin(this, driver, 'seeker');
       await driver.get(`${BASE}/dashboard/workshops`);
 
-      const hasEnroll = await present(
+      const showsCancel = await present(
         driver,
-        By.xpath("//button[contains(translate(., 'ENROLL', 'enroll'), 'enroll')]")
+        By.xpath("//button[contains(translate(., 'CANCEL ENROLLMENT', 'cancel enrollment'), 'cancel enrollment')]"),
+        10000
       );
-      if (!hasEnroll) {
-        pending(this, 'Workshops.jsx (T12.8) not merged yet');
-      }
 
-      expect(hasEnroll).to.equal(true);
+      expect(showsCancel).to.equal(true);
     });
   });
 });
