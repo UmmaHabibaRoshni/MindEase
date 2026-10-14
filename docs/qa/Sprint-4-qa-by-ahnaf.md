@@ -143,8 +143,8 @@ root. **26 passing, 1 pending, 0 failing** in Chrome against the real database.
 
 | Suite | Result |
 |---|---|
-| Server unit tests (mine + teammates') | **305 passing, 20 suites** |
-| Client unit tests | **31 passing** |
+| Server unit tests (mine + teammates') | **335 passing, 21 suites** |
+| Client unit tests | **49 passing** |
 | Sprint 3 Selenium | 20 passing, 2 pending |
 | Sprint 4 Selenium | 26 passing, 1 pending |
 | **Failing anywhere** | **0** |
@@ -213,8 +213,8 @@ node seeds/seedFacilitator.js     # facilitator@test.com / Facilitator@12345
 node seeds/seedTestSeeker.js      # seeker@test.com      / Seeker@12345
 
 # unit tests
-cd server && npm test             # 305 passing
-cd client && npm test             #  31 passing
+cd server && npm test             # 335 passing
+cd client && npm test             #  49 passing
 
 # end-to-end (both apps must be running)
 cd server && npm run dev          # :5000
