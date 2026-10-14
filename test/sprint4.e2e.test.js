@@ -363,32 +363,158 @@ describe('MindEase Sprint 4 E2E - BL-12 Workshops (Selenium)', function () {
   });
 
   // ============================================================ seeker, T12.5
+  // T12.5 merged on 14 October (PR #38), so these now run for real. The routes
+  // are /api/workshops/available, POST /api/workshops/:id/enroll and
+  // DELETE /api/workshops/:id/enroll.
+  //
+  // T12.E20 and T12.E23 exist because of bugs B1 and B2 in the QA report -
+  // the capacity race and re-enrolling after a cancellation. Both are handled
+  // correctly in the merged implementation; these specs are what keeps them
+  // that way.
   describe('Seeker enrollment APIs (T12.5)', function () {
-    it('T12.E18: a seeker can list upcoming workshops', async function () {
-      const res = await api('/api/workshops');
-      if (res.status === 404) {
-        pending(this, 'T12.5 not merged - there is no GET /api/workshops yet');
-      }
+    let seekerToken;
+    let secondSeekerToken;
+
+    // Filling a workshop to capacity needs a second seeker. The same address
+    // is reused on every run, so this adds one row to the shared database in
+    // total, not one per run.
+    async function loginSecondSeeker() {
+      const creds = { email: 'e2e.second.seeker@test.com', password: 'Seeker@12345' };
+
+      const existing = await api('/api/auth/login', { method: 'POST', body: creds });
+      if (existing.status === 200) return existing.body.token;
+
+      await api('/api/auth/register', {
+        method: 'POST',
+        body: { name: 'E2E Second Seeker', phone: '01711111111', role: 'seeker', ...creds },
+      });
+      const res = await api('/api/auth/login', { method: 'POST', body: creds });
+      return res.status === 200 ? res.body.token : null;
+    }
+
+    before(async function () {
+      seekerToken = await apiLogin('seeker');
+      secondSeekerToken = await loginSecondSeeker();
+    });
+
+    it('T12.E18: a seeker can list available workshops', async function () {
+      if (!seekerToken) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      const created = await createWorkshop();
+      expect(created.status).to.equal(201);
+
+      const res = await api('/api/workshops/available', { token: seekerToken });
 
       expect(res.status).to.equal(200);
+      expect(res.body).to.be.an('array');
+      expect(res.body.map((w) => w._id)).to.include(created.body.workshop._id);
     });
 
     it('T12.E19: a seeker can enroll, and cannot enroll twice', async function () {
-      const probe = await api('/api/workshops');
-      if (probe.status === 404) {
-        pending(this, 'T12.5 not merged - enrollment endpoints do not exist yet');
-      }
+      if (!seekerToken) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
 
-      expect.fail('T12.5 has landed - write the enroll, capacity and double-enroll assertions');
+      const created = await createWorkshop();
+      const id = created.body.workshop._id;
+
+      const first = await api(`/api/workshops/${id}/enroll`, { method: 'POST', token: seekerToken });
+      const second = await api(`/api/workshops/${id}/enroll`, { method: 'POST', token: seekerToken });
+
+      expect(first.status).to.equal(201);
+      expect(second.status).to.equal(409);
+
+      // the seat is counted once, not twice
+      const list = await api('/api/workshops/available', { token: seekerToken });
+      const mine = list.body.find((w) => w._id === id);
+      expect(mine.enrolledCount).to.equal(1);
     });
 
+    // B2 in the QA report: enrolledCount was read, checked and written back,
+    // so two seekers could both take the last seat. The merged version takes
+    // the seat with one atomic update instead.
     it('T12.E20: enrolling in a full workshop is rejected', async function () {
-      const probe = await api('/api/workshops');
-      if (probe.status === 404) {
-        pending(this, 'T12.5 not merged - capacity rule cannot be tested yet');
-      }
+      if (!seekerToken) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+      if (!secondSeekerToken) pending(this, 'could not register the second seeker');
 
-      expect.fail('T12.5 has landed - write the capacity assertion');
+      const created = await createWorkshop({ capacity: 1 });
+      const id = created.body.workshop._id;
+
+      const taker = await api(`/api/workshops/${id}/enroll`, { method: 'POST', token: seekerToken });
+      const latecomer = await api(`/api/workshops/${id}/enroll`, {
+        method: 'POST',
+        token: secondSeekerToken,
+      });
+
+      expect(taker.status).to.equal(201);
+      expect(latecomer.status).to.equal(409);
+      expect(latecomer.body.message).to.match(/full/i);
+
+      // capacity was never exceeded
+      const list = await api('/api/workshops/available', { token: seekerToken });
+      const full = list.body.find((w) => w._id === id);
+      expect(full.enrolledCount).to.equal(1);
+      expect(full.enrolledCount).to.be.at.most(full.capacity);
+    });
+  });
+
+  // =================================================== enrollment edge cases
+  describe('Enrollment edge cases (T12.5)', function () {
+    let seekerToken;
+
+    before(async function () {
+      seekerToken = await apiLogin('seeker');
+    });
+
+    // B1 in the QA report: the unique index covered cancelled rows, so a
+    // seeker who changed their mind could never come back.
+    it('T12.E23: a seeker can enroll again after cancelling', async function () {
+      if (!seekerToken) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      const created = await createWorkshop();
+      const id = created.body.workshop._id;
+
+      const enrolled = await api(`/api/workshops/${id}/enroll`, { method: 'POST', token: seekerToken });
+      const cancelled = await api(`/api/workshops/${id}/enroll`, { method: 'DELETE', token: seekerToken });
+      const again = await api(`/api/workshops/${id}/enroll`, { method: 'POST', token: seekerToken });
+
+      expect(enrolled.status).to.equal(201);
+      expect(cancelled.status).to.equal(200);
+      expect(again.status, 'B1: re-enrolling after a cancellation must work').to.equal(201);
+
+      // and the seat is counted once, not twice
+      const list = await api('/api/workshops/available', { token: seekerToken });
+      expect(list.body.find((w) => w._id === id).enrolledCount).to.equal(1);
+    });
+
+    it('T12.E24: cancelling without being enrolled is rejected', async function () {
+      if (!seekerToken) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      const created = await createWorkshop();
+      const res = await api(`/api/workshops/${created.body.workshop._id}/enroll`, {
+        method: 'DELETE',
+        token: seekerToken,
+      });
+
+      expect(res.status).to.equal(404);
+    });
+
+    it('T12.E25: the seeker routes check the token and the role', async function () {
+      if (!seekerToken) pending(this, 'no seeker account - run server/seeds/seedTestSeeker.js');
+
+      const anonList = await api('/api/workshops/available');
+      const facilitatorList = await api('/api/workshops/available', { token: facilitatorToken });
+      const badId = await api('/api/workshops/not-an-id/enroll', {
+        method: 'POST',
+        token: seekerToken,
+      });
+      const missing = await api('/api/workshops/000000000000000000000000/enroll', {
+        method: 'POST',
+        token: seekerToken,
+      });
+
+      expect(anonList.status, 'no token').to.equal(401);
+      expect(facilitatorList.status, 'wrong role').to.equal(403);
+      expect(badId.status, 'malformed id').to.equal(400);
+      expect(missing.status, 'unknown workshop').to.equal(404);
     });
   });
 
