@@ -27,6 +27,14 @@ const caseAssignmentSchema = new mongoose.Schema(
       enum: ["pending", "accepted", "rejected", "completed"],
       default: "pending",
     },
+    // Why the psychologist accepted, rejected or completed the case. Optional,
+    // and only ever written by the psychologist the case belongs to.
+    decisionReason: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: "",
+    },
   },
   { timestamps: true }
 );

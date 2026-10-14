@@ -56,7 +56,6 @@ export const getPsychologistSummary = async () => {
 
 /**
  * Retrieves paginated and status-filtered clinical cases assigned to the current psychologist
- * Handles HTTP 404 gracefully when route is not yet mounted on backend server.
  * 
  * @param {string} statusFilter - Filter criteria ('all', 'pending', 'accepted', 'completed', 'rejected')
  * @param {number} page - Current page index (Default: 1)
@@ -105,19 +104,8 @@ export const getAssignedCases = async (
     console.error('[Psychologist API Service Error] getAssignedCases failure:', {
       statusFilter,
       error: error.message,
-      status: error.response?.status,
+      response: error.response?.data,
     });
-
-    if (error.response?.status === 404) {
-      console.warn('[Psychologist API Warning] Backend /cases route returned 404. Returning empty list.');
-      return {
-        success: true,
-        data: [],
-        pagination: { page: Number(page), limit: Number(limit), total: 0, totalPages: 1 },
-        timestamp: new Date().toISOString(),
-      };
-    }
-
     const errorMessage = error.response?.data?.message || 'Failed to retrieve assigned clinical cases';
     throw new Error(errorMessage);
   }
@@ -153,7 +141,6 @@ export const getCaseDetailsById = async (caseId) => {
 
 /**
  * Updates case status lifecycle (Pending -> Accepted/Rejected or Accepted -> Completed)
- * Handles HTTP 404 gracefully if backend route is missing.
  * 
  * @param {string} caseId - Target Case Object ID
  * @param {string} status - Target status string ('Accepted', 'Rejected', 'Completed')
@@ -198,19 +185,8 @@ export const updateCaseStatus = async (caseId, status, decisionReason = '') => {
     console.error(`[Psychologist API Service Error] updateCaseStatus failure for Case ${caseId}:`, {
       targetStatus: normalizedStatus,
       error: error.message,
-      status: error.response?.status,
+      response: error.response?.data,
     });
-
-    if (error.response?.status === 404) {
-      console.warn('[Psychologist API Warning] Backend /status route returned 404. Mocking status update response.');
-      return {
-        success: true,
-        data: { _id: caseId, status: normalizedStatus },
-        message: `Status updated to ${normalizedStatus} (Fallback)`,
-        timestamp: new Date().toISOString(),
-      };
-    }
-
     const errorMessage = error.response?.data?.message || 'Failed to update case lifecycle status';
     throw new Error(errorMessage);
   }
