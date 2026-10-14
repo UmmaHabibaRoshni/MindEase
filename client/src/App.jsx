@@ -15,6 +15,7 @@ import SeekerDashboard from "./pages/seeker/SeekerDashboard";
 import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
 import PsychologistDashboard from "./pages/psychologist/PsychologistDashboard";
 import NgoDashboard from "./pages/ngo/NgoDashboard";
+import ReferralDetail from "./pages/ngo/ReferralDetail";
 import FacilitatorDashboard from "./pages/facilitator/FacilitatorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CrisisRequestForm from "./pages/seeker/CrisisRequestForm";
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="volunteer" element={<RequireRole role="volunteer"><VolunteerDashboard /></RequireRole>} />
         <Route path="psychologist" element={<RequireRole role="psychologist"><PsychologistDashboard /></RequireRole>} />
         <Route path="ngo" element={<RequireRole role="ngo"><NgoDashboard /></RequireRole>} />
+        <Route path="ngo/referrals/:id" element={<RequireRole role="ngo"><ReferralDetail /></RequireRole>} />
         <Route path="facilitator" element={<RequireRole role="facilitator"><FacilitatorDashboard /></RequireRole>} />
         <Route path="admin" element={<RequireRole role="admin"><AdminDashboard /></RequireRole>} />
         <Route path="new-request" element={<RequireRole role="seeker"><CrisisRequestForm /></RequireRole>} />
