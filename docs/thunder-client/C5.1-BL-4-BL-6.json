@@ -1,0 +1,1387 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "MindEase C5.1 BL-4 + BL-6 manual QA",
+  "dateExported": "2026-10-21T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "settings": {
+    "envVars": [
+      {
+        "name": "baseUrl",
+        "value": "http://localhost:5000"
+      },
+      {
+        "name": "seekerToken",
+        "value": "<set by 00>"
+      },
+      {
+        "name": "volunteerToken",
+        "value": "<set by 01>"
+      },
+      {
+        "name": "ngoToken",
+        "value": "<set by 02>"
+      },
+      {
+        "name": "otherNgoToken",
+        "value": "<set by 03>"
+      },
+      {
+        "name": "requestId",
+        "value": "<set by A09>"
+      },
+      {
+        "name": "ngoId",
+        "value": "<copy Test NGO Organisation _id from B01>"
+      },
+      {
+        "name": "wrongNgoId",
+        "value": "<set by B02>"
+      },
+      {
+        "name": "referralId",
+        "value": "<set by B13>"
+      }
+    ]
+  },
+  "requests": [
+    {
+      "_id": "c51-01",
+      "colId": "c51",
+      "containerId": "",
+      "name": "00 Login seeker (saves seekerToken)",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{seekerToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"seeker@test.com\",\n  \"password\": \"Seeker@12345\"\n}"
+      }
+    },
+    {
+      "_id": "c51-02",
+      "colId": "c51",
+      "containerId": "",
+      "name": "01 Login volunteer (saves volunteerToken)",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 20000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{volunteerToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"volunteer@test.com\",\n  \"password\": \"Test@1234\"\n}"
+      }
+    },
+    {
+      "_id": "c51-03",
+      "colId": "c51",
+      "containerId": "",
+      "name": "02 Login test NGO (saves ngoToken)",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 30000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{ngoToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"ngo@test.com\",\n  \"password\": \"Ngo@12345\"\n}"
+      }
+    },
+    {
+      "_id": "c51-04",
+      "colId": "c51",
+      "containerId": "",
+      "name": "03 Login other NGO (saves otherNgoToken)",
+      "url": "{{baseUrl}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 40000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{otherNgoToken}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"ngo1@example.org\",\n  \"password\": \"Ngo@12345\"\n}"
+      }
+    },
+    {
+      "_id": "c51-05",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A01 Create request - no token",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 50000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"medium\",\n  \"description\": \"QA C5.1 by Fairoz - test request, please ignore.\"\n}"
+      }
+    },
+    {
+      "_id": "c51-06",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A02 Create request - fake token",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 60000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer not-a-real-token"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"medium\",\n  \"description\": \"QA C5.1 by Fairoz - test request, please ignore.\"\n}"
+      }
+    },
+    {
+      "_id": "c51-07",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A03 Create request - as volunteer (wrong role)",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 70000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"medium\",\n  \"description\": \"QA C5.1 by Fairoz - test request, please ignore.\"\n}"
+      }
+    },
+    {
+      "_id": "c51-08",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A04 Create request - urgency missing",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 80000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"description\": \"QA C5.1 missing urgency test\"\n}"
+      }
+    },
+    {
+      "_id": "c51-09",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A05 Create request - invalid category",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 90000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"food\",\n  \"urgency\": \"medium\",\n  \"description\": \"QA C5.1 by Fairoz - test request, please ignore.\"\n}"
+      }
+    },
+    {
+      "_id": "c51-10",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A06 Create request - invalid urgency",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 100000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"extreme\",\n  \"description\": \"QA C5.1 by Fairoz - test request, please ignore.\"\n}"
+      }
+    },
+    {
+      "_id": "c51-11",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A07 Create request - description under 10 chars",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 110000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"medium\",\n  \"description\": \"help\"\n}"
+      }
+    },
+    {
+      "_id": "c51-12",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A08 Create request - description only spaces",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 120000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"medium\",\n  \"description\": \"            \"\n}"
+      }
+    },
+    {
+      "_id": "c51-13",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A09 Create request - valid, with extra fields that must be ignored (saves requestId)",
+      "url": "{{baseUrl}}/api/requests",
+      "method": "POST",
+      "sortNum": 130000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.request._id",
+          "action": "setto",
+          "value": "{{requestId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"category\": \"mental_health\",\n  \"urgency\": \"medium\",\n  \"description\": \"QA C5.1 by Fairoz - test request, please ignore.\",\n  \"status\": \"accepted\",\n  \"acceptedBy\": \"000000000000000000000000\"\n}"
+      }
+    },
+    {
+      "_id": "c51-14",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A10 My requests - as seeker",
+      "url": "{{baseUrl}}/api/requests/mine",
+      "method": "GET",
+      "sortNum": 140000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-15",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A11 My requests - as volunteer (wrong role)",
+      "url": "{{baseUrl}}/api/requests/mine",
+      "method": "GET",
+      "sortNum": 150000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ]
+    },
+    {
+      "_id": "c51-16",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A12 Pending requests - as volunteer (no seeker identity)",
+      "url": "{{baseUrl}}/api/requests/pending",
+      "method": "GET",
+      "sortNum": 160000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-17",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A13 Pending requests - as seeker (wrong role)",
+      "url": "{{baseUrl}}/api/requests/pending",
+      "method": "GET",
+      "sortNum": 170000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ]
+    },
+    {
+      "_id": "c51-18",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B01 NGO list - mental_health (copy Test NGO _id into ngoId)",
+      "url": "{{baseUrl}}/api/ngos?category=mental_health",
+      "method": "GET",
+      "sortNum": 180000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-19",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B02 NGO list - legal_aid (saves wrongNgoId)",
+      "url": "{{baseUrl}}/api/ngos?category=legal_aid",
+      "method": "GET",
+      "sortNum": 190000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.ngos[0]._id",
+          "action": "setto",
+          "value": "{{wrongNgoId}}"
+        }
+      ]
+    },
+    {
+      "_id": "c51-20",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B03 NGO list - as seeker (wrong role)",
+      "url": "{{baseUrl}}/api/ngos",
+      "method": "GET",
+      "sortNum": 200000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ]
+    },
+    {
+      "_id": "c51-21",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B04 Refer a request that is still pending (not accepted yet)",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 210000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-22",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A14 Accept - invalid id",
+      "url": "{{baseUrl}}/api/requests/123/accept",
+      "method": "PATCH",
+      "sortNum": 220000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      }
+    },
+    {
+      "_id": "c51-23",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A15 Accept - id that does not exist",
+      "url": "{{baseUrl}}/api/requests/000000000000000000000000/accept",
+      "method": "PATCH",
+      "sortNum": 230000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "404"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      }
+    },
+    {
+      "_id": "c51-24",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A16 Accept - as seeker (wrong role)",
+      "url": "{{baseUrl}}/api/requests/{{requestId}}/accept",
+      "method": "PATCH",
+      "sortNum": 240000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      }
+    },
+    {
+      "_id": "c51-25",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A17 Accept - volunteer accepts the QA request",
+      "url": "{{baseUrl}}/api/requests/{{requestId}}/accept",
+      "method": "PATCH",
+      "sortNum": 250000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      }
+    },
+    {
+      "_id": "c51-26",
+      "colId": "c51",
+      "containerId": "",
+      "name": "A18 Accept - same request again (double accept)",
+      "url": "{{baseUrl}}/api/requests/{{requestId}}/accept",
+      "method": "PATCH",
+      "sortNum": 260000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "409"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{}"
+      }
+    },
+    {
+      "_id": "c51-27",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B05 Referral - no token",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 270000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "401"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-28",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B06 Referral - as seeker (wrong role)",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 280000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-29",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B07 Referral - consent missing",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 290000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\"\n}"
+      }
+    },
+    {
+      "_id": "c51-30",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B08 Referral - consent false",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 300000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": false\n}"
+      }
+    },
+    {
+      "_id": "c51-31",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B09 Referral - consent as text \"true\" (must be real true)",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 310000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": \"true\"\n}"
+      }
+    },
+    {
+      "_id": "c51-32",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B10 Referral - invalid ids",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 320000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"abc\",\n  \"ngoId\": \"xyz\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-33",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B11 Referral - NGO that does not exist",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 330000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "404"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"000000000000000000000000\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-34",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B12 Referral - NGO that does not handle this category",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 340000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{wrongNgoId}}\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-35",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B13 Referral - valid (saves referralId)",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 350000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "201"
+        },
+        {
+          "type": "set-env-var",
+          "custom": "json.referral._id",
+          "action": "setto",
+          "value": "{{referralId}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-36",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B14 Referral - same request again (double referral)",
+      "url": "{{baseUrl}}/api/referrals",
+      "method": "POST",
+      "sortNum": 360000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"consent\": true\n}"
+      }
+    },
+    {
+      "_id": "c51-37",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B15 Seeker sees the request as referred",
+      "url": "{{baseUrl}}/api/requests/mine",
+      "method": "GET",
+      "sortNum": 370000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{seekerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-38",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B16 Volunteer still sees the referred case in accepted list",
+      "url": "{{baseUrl}}/api/requests/accepted",
+      "method": "GET",
+      "sortNum": 380000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-39",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B17 NGO lists its referrals (no seeker identity)",
+      "url": "{{baseUrl}}/api/referrals/mine",
+      "method": "GET",
+      "sortNum": 390000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ngoToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-40",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B18 NGO opens the QA referral",
+      "url": "{{baseUrl}}/api/referrals/{{referralId}}",
+      "method": "GET",
+      "sortNum": 400000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ngoToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "200"
+        }
+      ]
+    },
+    {
+      "_id": "c51-41",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B19 Other NGO cannot open this referral",
+      "url": "{{baseUrl}}/api/referrals/{{referralId}}",
+      "method": "GET",
+      "sortNum": 410000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{otherNgoToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "404"
+        }
+      ]
+    },
+    {
+      "_id": "c51-42",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B20 Volunteer cannot use the NGO referral list",
+      "url": "{{baseUrl}}/api/referrals/mine",
+      "method": "GET",
+      "sortNum": 420000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{volunteerToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "403"
+        }
+      ]
+    },
+    {
+      "_id": "c51-43",
+      "colId": "c51",
+      "containerId": "",
+      "name": "B21 NGO list with an invalid status filter",
+      "url": "{{baseUrl}}/api/referrals/mine?status=bogus",
+      "method": "GET",
+      "sortNum": 430000,
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ngoToken}}"
+        }
+      ],
+      "params": [],
+      "tests": [
+        {
+          "type": "res-code",
+          "custom": "",
+          "action": "equal",
+          "value": "400"
+        }
+      ]
+    }
+  ]
+}
