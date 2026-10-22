@@ -70,12 +70,12 @@ Test data I created is marked "QA C5.1 by Fairoz" in its description.
 
 ## 4. Spec checks (T4.5)
 
-Compared: SRS ______ (section ___), `server/models/CrisisRequest.js`, `server/models/Ngo.js`, `server/config/requestOptions.js`, `client/src/components/requestOptions.js`.
+Compared: SRS v1.0 (section 3.1.2: FR 2.1-2.3; section 6.1), `server/models/CrisisRequest.js`, `server/models/Ngo.js`, `server/config/requestOptions.js`, `client/src/components/requestOptions.js`.
 
 | ID | Check | Found | Result |
 |---|---|---|---|
-| S1 | Categories are the same everywhere | Server model, Ngo model and client all use the same 6: `mental_health, abuse_violence, legal_aid, medical, substance_use, other`. SRS: ____ | ✅ |
-| S2 | Urgency levels are the same everywhere | Server and client both use `low, medium, high, critical`. SRS: ____ | ✅ |
+| S1 | Categories are the same everywhere | Server model, Ngo model and client all use the same 6: `mental_health, abuse_violence, legal_aid, medical, substance_use, other`. SRS: FR 2.1 does not list categories, so no conflict | ✅ |
+| S2 | Urgency levels are the same everywhere | Server and client both use `low, medium, high, critical`. SRS: no urgency levels are defined, so no conflict | ✅ |
 | S3 | Request statuses are the same everywhere | **Mismatch.** Model: `pending, accepted, escalated, referred, closed`. `server/config/requestOptions.js`: has `resolved` (not in the model) and no `closed`. Client `REQUEST_STATUSES`: no `escalated`, so `StatusBadge` shows the raw word | ❌ |
 | S4 | Constants file path in comments | The comments in `CrisisRequest.js`, `Ngo.js` and `Referral.js` point to `client/src/constants/requestOptions.js`, which does not exist. The real file is `client/src/components/requestOptions.js` | ❌ |
 | S5 | Description length limits shown to the user | Server allows 10–2000 characters. The form enforces the minimum (10) but has no `maxLength`, so an over-long text is only rejected after Submit | ❌ |
@@ -92,4 +92,4 @@ Compared: SRS ______ (section ___), `server/models/CrisisRequest.js`, `server/mo
 
 ## 6. Conclusion
 
-BL-4 works as specified. All 31 checks passed (13 UI, 18 API): validation, role checks, data minimisation (volunteers never see seeker identity) and double-accept protection all behave correctly. 3 low-severity consistency issues were found (status lists, a wrong path in comments, no maxLength on the description field); none of them block users. SRS comparison to be completed once the SRS section is received.
+BL-4 works as specified. All 31 checks passed (13 UI, 18 API): validation, role checks, data minimisation (volunteers never see seeker identity) and double-accept protection all behave correctly. 3 low-severity consistency issues were found (status lists, a wrong path in comments, no maxLength on the description field); none of them block users. Checked against SRS v1.0 FR 2.1-2.3: all met.

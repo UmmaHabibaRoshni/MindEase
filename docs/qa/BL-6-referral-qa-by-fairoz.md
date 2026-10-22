@@ -83,17 +83,17 @@ The referral used in these checks is for the "QA C5.1 by Fairoz" request (A09 in
 
 ## 5. Referral rules and spec checks (T6.6, T7.5)
 
-Compared: SRS ______ (section ___), `server/controllers/referralController.js`, `server/models/Referral.js`, `server/models/Ngo.js`, `client/src/components/referral/ReferNgoPanel.jsx`, `client/src/components/common/ConsentConfirm.jsx`.
+Compared: SRS v1.0 (section 3.1.5: FR 5.1-5.3; section 6.1 Data and Privacy), `server/controllers/referralController.js`, `server/models/Referral.js`, `server/models/Ngo.js`, `client/src/components/referral/ReferNgoPanel.jsx`, `client/src/components/common/ConsentConfirm.jsx`.
 
 | ID | Check | Found | Result |
 |---|---|---|---|
-| S6 | NGO categories match request categories | `Ngo.js` uses the same 6 categories as `CrisisRequest.js` and the client. SRS: ____ | ✅ |
+| S6 | NGO categories match request categories | `Ngo.js` uses the same 6 categories as `CrisisRequest.js` and the client. SRS: FR 5.1 names domestic violence and abuse cases, which matches abuse_violence; no full category list is defined, so no conflict | ✅ |
 | S7 | Referral rules in the backend | All enforced: consent must be `true`, NGO must exist and be approved, NGO must handle the category, only the volunteer who accepted can refer, the request must be `accepted`, one referral per request (unique index + atomic update), and the request is rolled back to `accepted` if saving the referral fails | ✅ |
 | S8 | Data minimisation | Pending list, NGO list and NGO referral APIs never return seeker identity or NGO contact details (confirmed by A12, B01, B17, B18) | ✅ |
 | S9 | Referral status values (T7.5) | **Mismatch.** `Referral.js` and `ReferralDetail.jsx`: `pending, in_progress, resolved, closed`. Client `REFERRAL_STATUSES` in `requestOptions.js`: `Pending, Accepted, Rejected, Completed` (not used anywhere, but wrong). `StatusBadge` has no labels for `in_progress` or `resolved` | ❌ |
 | S10 | `ReferNgoPanel` import path | **Blocker for C5.2.** It imports `../../constants/requestOptions`, which does not exist (the file is in `components/`). The build will fail once the panel is put on a page | ❌ |
 | S11 | `ReferNgoPanel` NGO fields | **Blocker for C5.2.** It shows `ngo.name` and `ngo.description`, but `GET /api/ngos` returns `organizationName` and `address`. NGO names will be blank and the consent dialog will say "Share your request with undefined?" | ❌ |
-| S12 | Consent wording | `ConsentConfirm` speaks to the **seeker** ("Share your request…", "I agree…"), but the **volunteer** clicks it. Check with the SRS whether the volunteer is confirming the seeker agreed (e.g. in chat) and reword it. SRS: ____ | ❌ |
+| S12 | Consent wording | `ConsentConfirm` speaks to the **seeker** ("Share your request…", "I agree…"), but the **volunteer** clicks it. Check with the SRS whether the volunteer is confirming the seeker agreed (e.g. in chat) and reword it. SRS 6.1: the system shall obtain appropriate user consent before sharing sensitive information, so consent must come from the seeker and the wording must say the seeker agreed (bug #3 confirmed) | ❌ |
 
 ---
 
@@ -109,4 +109,4 @@ Compared: SRS ______ (section ___), `server/controllers/referralController.js`, 
 
 ## 7. Conclusion
 
-The BL-6 backend works as specified: 21 of 21 API checks passed, every referral rule is enforced (consent must be true, NGO must be approved and handle the category, only the accepting volunteer can refer, one referral per request) and no seeker identity reaches the NGO. The frontend is not usable yet: (1) the NGO dashboard still runs on mock data (`USE_MOCK = true`), so NGOs never see real referrals and status updates are not saved (bug #0, reported to Roshni); (2) ReferNgoPanel has two bugs that will break C5.2 (bugs #1 and #2, reported to Roshni). Section 4 (volunteer referral UI) and N1–N4 must be re-run after C5.2 and the USE_MOCK fix are merged.
+The BL-6 backend works as specified: 21 of 21 API checks passed, every referral rule is enforced (consent must be true, NGO must be approved and handle the category, only the accepting volunteer can refer, one referral per request) and no seeker identity reaches the NGO. The frontend is not usable yet: (1) the NGO dashboard still runs on mock data (`USE_MOCK = true`), so NGOs never see real referrals and status updates are not saved (bug #0, reported to Roshni); (2) ReferNgoPanel has two bugs that will break C5.2 (bugs #1 and #2, reported to Roshni). Against SRS v1.0: the API meets FR 5.1-5.3, but the NGO page currently fails FR 5.2 and FR 5.3 because of bug #0. Section 4 (volunteer referral UI) and N1–N4 must be re-run after C5.2 and the USE_MOCK fix are merged.
