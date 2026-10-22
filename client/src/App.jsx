@@ -10,6 +10,7 @@ import About from "./pages/public/About";
 import ResourceLibrary from "./pages/public/ResourceLibrary"; 
 import ManageResources from "./pages/admin/ManageResources";
 import Verifications from "./pages/admin/Verifications";
+import ManageUsers from "./pages/admin/ManageUsers";
 
 import SeekerDashboard from "./pages/seeker/SeekerDashboard";
 import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
@@ -87,6 +88,9 @@ export default function App() {
 
         {/* T8.8 - admin account verification queue */}
         <Route path="verifications" element={<RequireRole role="admin"><Verifications /></RequireRole>} />
+
+        {/* T16.9 - admin user management */}
+        <Route path="users" element={<RequireRole role="admin"><ManageUsers /></RequireRole>} />
 
         <Route path="mood" element={<Placeholder title="Mood Tracker" />} />
         <Route path="journal" element={<Placeholder title="Journal" />} />

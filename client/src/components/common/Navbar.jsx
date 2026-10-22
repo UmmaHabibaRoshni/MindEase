@@ -1,4 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 import "./Navbar.css";
 
 function getStoredUser() {
@@ -42,6 +43,8 @@ export default function Navbar() {
             <NavLink to="/dashboard" className={linkClass}>
               Dashboard
             </NavLink>
+            {/* T15.7 - only signed-in users have notifications */}
+            <NotificationBell />
             <span className="navbar-user">Hi, {user.name}</span>
             <button onClick={handleLogout} className="navbar-btn">
               Logout
