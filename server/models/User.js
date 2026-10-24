@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
+      enum: ['pending', 'approved', 'rejected', 'suspended'],
       default: function () {
         return this.role === 'seeker' ? 'approved' : 'pending';
       },
@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     verifiedAt: { type: Date, default: null },
     rejectionReason: { type: String, default: '' },
+    // T16.1 - set when an admin suspends the account, cleared on reactivation
+    suspendedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    suspendedAt: { type: Date, default: null },
+    suspensionReason: { type: String, default: '' },
   },
   { timestamps: true }
 );
