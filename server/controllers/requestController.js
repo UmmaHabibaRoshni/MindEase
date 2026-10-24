@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const CrisisRequest = require("../models/CrisisRequest");
+const { notify } = require("../utils/notify");
 
 // POST /api/requests  (seeker only)
 exports.createRequest = async (req, res) => {
@@ -107,6 +108,13 @@ exports.acceptRequest = async (req, res) => {
         message: exists ? "Request already accepted" : "Request not found",
       });
     }
+
+    await notify(
+      request.seeker,
+      "request_accepted",
+      "A volunteer accepted your request. You can open the chat now.",
+      "/dashboard/seeker"
+    );
 
     res.json({ message: "Request accepted", request });
   } catch (err) {

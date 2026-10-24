@@ -2,6 +2,7 @@
 const mongoose = require("mongoose");
 const Workshop = require("../models/Workshop");
 const WorkshopEnrollment = require("../models/WorkshopEnrollment");
+const { notify, notifyMany } = require("../utils/notify");
 
 const approvedOnly = (req, res) => {
   if (req.user.status !== "approved") {
@@ -147,6 +148,12 @@ exports.cancelWorkshop = async (req, res) => {
 
     await workshop.cancelWorkshop();
 
+    // remember who was enrolled before their enrollments are cancelled
+    const enrolled = await WorkshopEnrollment.find({
+      workshop: workshop._id,
+      status: "Enrolled",
+    }).select("seeker");
+
     // the seekers who were enrolled are marked as cancelled too
     const result = await WorkshopEnrollment.updateMany(
       { workshop: workshop._id, status: "Enrolled" },
@@ -155,6 +162,14 @@ exports.cancelWorkshop = async (req, res) => {
         cancellationReason: "Workshop cancelled by facilitator",
         cancelledAt: new Date(),
       }
+    );
+
+    // tell each of those seekers
+    await notifyMany(
+      enrolled.map((e) => e.seeker),
+      "workshop_cancelled",
+      `The workshop "${workshop.title}" was cancelled by the facilitator.`,
+      "/dashboard/workshops"
     );
 
     res.json({
@@ -236,6 +251,14 @@ exports.enroll = async (req, res) => {
         throw err;
       }
     }
+
+    await notify(
+      req.user.id,
+      "workshop_enrolled",
+      `You are enrolled in "${workshop.title}".`,
+      "/dashboard/workshops"
+    );
+
     res.status(201).json({ message: "Enrolled", enrollment });
   } catch (err) {
     handleError(err, res);

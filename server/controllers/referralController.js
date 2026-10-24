@@ -3,6 +3,7 @@ const CrisisRequest = require("../models/CrisisRequest");
 const Ngo = require("../models/Ngo");
 const User = require("../models/User");
 const Referral = require("../models/Referral");
+const { notify } = require("../utils/notify");
 const { REFERRAL_STATUSES, NOTE_MAX } = Referral;
 
 const approvedOnly = (req, res) => {
@@ -58,6 +59,21 @@ exports.createReferral = async (req, res) => {
         consentGiven: true,
         consentAt: new Date(),
       });
+
+      // tell the seeker and the NGO (notify never throws)
+      await notify(
+        request.seeker,
+        "referral_created",
+        "Your request was referred to an NGO that can help.",
+        "/dashboard/seeker"
+      );
+      await notify(
+        ngoUser._id,
+        "referral_created",
+        "You have a new referral from a volunteer.",
+        "/dashboard/ngo"
+      );
+
       res.status(201).json({ message: "Referral created", referral });
     } catch (err) {
       // roll back so the request isn't stuck as "referred"
