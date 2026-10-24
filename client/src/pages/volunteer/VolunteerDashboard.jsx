@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import ChatWindow from "../../components/chat/ChatWindow";
 import Availability from "../../components/Availability";
+import ReferNgoPanel from "../../components/referral/ReferNgoPanel"; // check this path, see below
 import { getUserIdFromToken } from "../../utils/getUserId";
 
 const card = {
@@ -13,10 +14,20 @@ const card = {
   background: "#fff",
 };
 
+const referredBadge = {
+  backgroundColor: "#c6f6d5",
+  color: "#22543d",
+  padding: "2px 8px",
+  borderRadius: 4,
+  fontSize: 12,
+  fontWeight: 600,
+};
+
 export default function VolunteerDashboard() {
   const [requests, setRequests] = useState([]);
   const [accepted, setAccepted] = useState([]);
   const [chatRequestId, setChatRequestId] = useState(null);
+  const [referRequestId, setReferRequestId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -67,6 +78,14 @@ export default function VolunteerDashboard() {
     await loadAccepted();
   };
 
+  // called by ReferNgoPanel after a successful referral
+  const handleReferred = async () => {
+    setReferRequestId(null);
+    setError("");
+    setMessage("Referral sent. The seeker and the NGO have been notified.");
+    await loadAccepted(); // the case now comes back as "referred"
+  };
+
   return (
     <div style={{ padding: "2rem", maxWidth: 900 }}>
       <h1>Volunteer Dashboard</h1>
@@ -80,12 +99,33 @@ export default function VolunteerDashboard() {
       {accepted.length === 0 && <p>No accepted cases yet.</p>}
       {accepted.map((r) => (
         <div key={r._id} style={card}>
-          <strong>{r.category}</strong> · Urgency: {r.urgency}
+          <strong>{r.category}</strong> - Urgency: {r.urgency}{" "}
+          {r.status === "referred" && <span style={referredBadge}>Referred</span>}
           <p>{r.description}</p>
           <small>Submitted: {new Date(r.createdAt).toLocaleDateString()}</small>
-          <div style={{ marginTop: "0.75rem" }}>
+
+          <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
             <button onClick={() => setChatRequestId(r._id)}>Open chat</button>
+            {r.status === "accepted" && (
+              <button
+                onClick={() =>
+                  setReferRequestId(referRequestId === r._id ? null : r._id)
+                }
+              >
+                {referRequestId === r._id ? "Close" : "Refer to NGO"}
+              </button>
+            )}
           </div>
+
+          {referRequestId === r._id && (
+            <div style={{ marginTop: "1rem", borderTop: "1px solid #eee", paddingTop: "1rem" }}>
+              <ReferNgoPanel
+                requestId={r._id}
+                defaultCategory={r.category}
+                onReferred={handleReferred}
+              />
+            </div>
+          )}
         </div>
       ))}
 
@@ -106,7 +146,7 @@ export default function VolunteerDashboard() {
 
       {requests.map((r) => (
         <div key={r._id} style={card}>
-          <strong>{r.category}</strong> · Urgency: {r.urgency}
+          <strong>{r.category}</strong> - Urgency: {r.urgency}
           <p>{r.description}</p>
           <small>Submitted: {new Date(r.createdAt).toLocaleDateString()}</small>
           <div style={{ marginTop: "0.75rem" }}>

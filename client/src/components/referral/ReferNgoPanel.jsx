@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { CATEGORIES } from "../../constants/requestOptions";
+import { CATEGORIES } from "../requestOptions";
 import ConsentConfirm from "../common/ConsentConfirm";
 
 // Props:
