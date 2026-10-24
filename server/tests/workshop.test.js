@@ -120,8 +120,18 @@ jest.mock("../models/WorkshopEnrollment", () => {
       rows.forEach((e) => Object.assign(e, update));
       return { modifiedCount: rows.length };
     }),
+    // NEW: the controller reads who is enrolled before cancelling a workshop
+    find: jest.fn((f) => ({
+      select: async () => mockStore.enrollments.filter((e) => matches(e, f)),
+    })),
   };
 });
+
+// NEW: the notification helper is mocked, so no database is needed
+jest.mock("../utils/notify", () => ({
+  notify: jest.fn(async () => null),
+  notifyMany: jest.fn(async () => []),
+}));
 
 const Workshop = require("../models/Workshop");
 const WorkshopEnrollment = require("../models/WorkshopEnrollment");

@@ -1,6 +1,7 @@
 
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const { notify } = require('../utils/notify');
 
 // GET /api/admin/pending-users
 exports.getPendingUsers = async (req, res) => {
@@ -36,6 +37,23 @@ async function reviewUser(req, res, newStatus, reason) {
   if (newStatus === 'rejected') user.rejectionReason = reason;
 
   await user.save();
+
+  // tell the user what happened to their account (notify never throws)
+  if (newStatus === 'approved') {
+    await notify(
+      user._id,
+      'account_approved',
+      'Your account was approved. You can log in now.',
+      '/dashboard'
+    );
+  } else {
+    await notify(
+      user._id,
+      'account_rejected',
+      `Your account was not approved. Reason: ${reason}`,
+      '/login'
+    );
+  }
 
   const safeUser = user.toObject();
   delete safeUser.password;

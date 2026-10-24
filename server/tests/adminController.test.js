@@ -3,6 +3,9 @@ jest.mock('../models/User', () => ({
   find: jest.fn(),
   findById: jest.fn(),
 }));
+jest.mock('../utils/notify', () => ({
+  notify: jest.fn(async () => null),
+}));
 
 const User = require('../models/User');
 const allowRoles = require('../middleware/role');
