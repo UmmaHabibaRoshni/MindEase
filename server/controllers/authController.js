@@ -95,6 +95,12 @@ exports.login = async (req, res) => {
     if (user.status === 'rejected') {
       return res.status(403).json({ message: 'Your account was not approved.' });
     }
+    // T16.1 - an admin suspended this account
+    if (user.status === 'suspended') {
+      return res
+        .status(403)
+        .json({ message: 'Your account has been suspended. Please contact support.' });
+    }
 
     const token = generateToken(user);
 
