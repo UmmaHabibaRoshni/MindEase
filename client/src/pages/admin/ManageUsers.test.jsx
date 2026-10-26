@@ -296,6 +296,32 @@ describe("guard rails", () => {
     expect(screen.getByText("This is you")).toBeInTheDocument();
   });
 
+  // T16.5 as merged does not mark the admin's own row, and the API answers a
+  // self-suspend with a 400. Without this the page would show a button whose
+  // only possible outcome is an error.
+  it("recognises its own row from the signed-in user when the API does not say", async () => {
+    localStorage.setItem("user", JSON.stringify({ id: "me", name: "Ahnaf", role: "admin" }));
+    getUsers.mockResolvedValue([
+      user({ _id: "me", name: "Ahnaf", role: "admin" }),
+      user({ _id: "u2", name: "Mim Akter" }),
+    ]);
+    setup();
+
+    await screen.findByTestId("users-row-me");
+    expect(screen.queryByTestId("users-suspend-me")).not.toBeInTheDocument();
+    expect(screen.getByText("This is you")).toBeInTheDocument();
+    // everyone else is still actionable
+    expect(screen.getByTestId("users-suspend-u2")).toBeInTheDocument();
+  });
+
+  it("does not crash when nothing is stored for the signed-in user", async () => {
+    localStorage.removeItem("user");
+    getUsers.mockResolvedValue([user({ _id: "u1" })]);
+    setup();
+
+    expect(await screen.findByTestId("users-suspend-u1")).toBeInTheDocument();
+  });
+
   it("locks only the row being changed, not the whole table", async () => {
     getUsers.mockResolvedValue([user({ _id: "u1" }), user({ _id: "u2", name: "Mim Akter" })]);
     let release;
