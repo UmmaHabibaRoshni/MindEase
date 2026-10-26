@@ -33,6 +33,19 @@ const statusColor = {
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" }) : "-";
 
+// Who is signed in. T16.5 does not mark the admin's own row, and the server
+// refuses a self-suspend with a 400, so the row is recognised here instead of
+// offering a button that can only fail. Login stores the id as `id`.
+function signedInId() {
+  try {
+    const raw = localStorage.getItem("user");
+    const user = raw ? JSON.parse(raw) : null;
+    return user ? String(user.id || user._id || "") : "";
+  } catch {
+    return "";
+  }
+}
+
 const styles = {
   page: { padding: "24px", backgroundColor: colors.bg, minHeight: "100%" },
   h1: { margin: "0 0 4px", fontSize: "24px", fontWeight: 600, color: colors.text },
@@ -91,6 +104,9 @@ export default function ManageUsers() {
   // told the reason, the same as a rejection.
   const [suspendingId, setSuspendingId] = useState(null);
   const [reason, setReason] = useState("");
+
+  // Read once: it cannot change while the page is open.
+  const [myId] = useState(signedInId);
 
   const load = useCallback(async (filters) => {
     setLoading(true);
@@ -236,6 +252,8 @@ export default function ManageUsers() {
             {users.map((user) => {
               const suspended = user.status === "suspended";
               const busy = busyId === user._id;
+              // `isSelf` if the API ever sends it, otherwise worked out here.
+              const isSelf = user.isSelf || String(user._id) === myId;
 
               return (
                 <tr key={user._id} data-testid={`users-row-${user._id}`}>
@@ -249,7 +267,7 @@ export default function ManageUsers() {
                   <td style={styles.td}>
                     {/* An admin suspending themselves would lock the last admin
                         out of the system, so the button is not offered. */}
-                    {user.isSelf ? (
+                    {isSelf ? (
                       <span style={{ color: colors.muted, fontSize: "13px" }}>This is you</span>
                     ) : suspended ? (
                       <button
