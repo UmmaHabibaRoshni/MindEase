@@ -32,7 +32,7 @@ const ADMIN = {
 };
 
 const ROLES = ['seeker', 'volunteer', 'psychologist', 'ngo', 'facilitator', 'admin'];
-const USER_STATUSES = ['pending', 'approved', 'rejected'];
+const USER_STATUSES = ['pending', 'approved', 'rejected', 'suspended'];
 const REQUEST_STATUSES = ['pending', 'accepted', 'escalated', 'referred', 'closed'];
 const CATEGORIES = ['mental_health', 'abuse_violence', 'legal_aid', 'medical', 'substance_use', 'other'];
 const WORKSHOP_STATUSES = ['Scheduled', 'Ongoing', 'Completed', 'Cancelled'];
@@ -116,7 +116,7 @@ async function main() {
   t.admin = await login(ADMIN.email, ADMIN.password);
   t.seeker = await login('seeker@test.com', 'Seeker@12345');
   t.volunteer = await login('volunteer@test.com', 'Test@1234');
-  t.ngo = await login('ngo@test.com', 'Ngo@12345');
+  t.ngo = (await login('ngo@test.com', 'Ngo@12345')) || (await login('ngo1@example.org', 'Ngo@12345'));
   for (const k of ['admin', 'seeker', 'volunteer', 'ngo']) console.log(`  ${k}: ${t[k] ? 'OK' : 'LOGIN FAILED'}`);
   if (!t.admin) {
     console.log('\nThe admin login is required. Run:  cd server && node seeds/seedTestAdmin.js');
@@ -145,7 +145,7 @@ async function main() {
     if (Number.isNaN(Date.parse(j.generatedAt))) gaps.push('generatedAt');
     return gaps.length
       ? { ok: false, note: `missing: ${gaps.join(', ')}` }
-      : { ok: true, note: 'every bucket present (6 roles, 3 user statuses, 5 request statuses, 6 categories, 4 workshop, 4 referral statuses), activeEnrollments and generatedAt present' };
+      : { ok: true, note: 'every bucket present (6 roles, 4 user statuses incl. suspended, 5 request statuses, 6 categories, 4 workshop, 4 referral statuses), activeEnrollments and generatedAt present' };
   });
   const s0 = s0r && s0r.status === 200 ? s0r.json : null;
 
