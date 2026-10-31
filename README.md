@@ -76,6 +76,14 @@ Optional keys:
 | `CLIENT_ORIGIN` | Socket.io CORS | `http://localhost:5173` |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | `seeds/seedAdmin.js` (first admin only) | none |
 | `VITE_SOCKET_URL` (in `client/.env`) | chat socket URL | `http://localhost:5000` |
+| `JITSI_DOMAIN` | BL-18 video rooms | `meet.jit.si` |
+| `VIDEO_ROOM_SECRET` | BL-18 video rooms, salts the room name | a constant in the repo |
+
+> **`VIDEO_ROOM_SECRET` must be the same on every machine.** A video room name
+> is derived from the workshop or case id *and* this salt, so two people running
+> their own backend with different salts would compute two different room names
+> and end up in two different empty calls. Use the shared value from the team
+> `.env`, the same way `CHAT_KEY` is shared.
 
 Check that Git is ignoring the file. `git status` must **not** list `.env`.
 
