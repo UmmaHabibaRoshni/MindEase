@@ -23,6 +23,7 @@ const EDITABLE = [
   "mode",
   "locationOrLink",
   "capacity",
+  "price",
   "tags",
 ];
 
@@ -49,6 +50,11 @@ const checkFields = (data) => {
     const d = new Date(data.date);
     if (isNaN(d.getTime())) return "Invalid date";
     if (d < startOfToday()) return "Workshop date cannot be in the past";
+  }
+  // price is optional: empty or 0 means free
+  if (data.price !== undefined && data.price !== null && data.price !== "") {
+    const p = Number(data.price);
+    if (!Number.isFinite(p) || p < 0) return "Price must be a number, 0 or more";
   }
   return null;
 };
@@ -200,6 +206,8 @@ exports.listAvailableWorkshops = async (req, res) => {
 };
 
 // POST /api/workshops/:id/enroll  (seeker)
+// Free workshops only. Paid workshops go through POST /api/workshops/:id/pay
+// and are enrolled by the payment callbacks after the payment is verified.
 exports.enroll = async (req, res) => {
   const { id } = req.params;
   try {
@@ -214,12 +222,18 @@ exports.enroll = async (req, res) => {
         status: "Scheduled",
         date: { $gte: startOfToday() },
         $expr: { $lt: ["$enrolledCount", "$capacity"] },
+        price: { $not: { $gt: 0 } }, // free only (empty, null or 0)
       },
       { $inc: { enrolledCount: 1 } }
     );
     if (!workshop) {
       const w = await Workshop.findById(id);
       if (!w) return res.status(404).json({ message: "Workshop not found" });
+      if (w.price > 0) {
+        return res
+          .status(400)
+          .json({ message: "This is a paid workshop. Use Pay & Enroll." });
+      }
       if (w.status !== "Scheduled" || w.date < startOfToday()) {
         return res.status(400).json({ message: "Workshop is not open for enrollment" });
       }

@@ -72,6 +72,11 @@ const workshopSchema = new mongoose.Schema(
       min: [1, 'Capacity must be at least 1 participant'],
       max: [500, 'Capacity cannot exceed 500 participants'],
     },
+        // Set by the facilitator. Empty or 0 means free. No default value.
+    price: {
+      type: Number,
+      min: [0, 'Price cannot be negative'],
+    },
     enrolledCount: {
       type: Number,
       default: 0,
@@ -114,6 +119,10 @@ workshopSchema.virtual('seatsAvailable').get(function () {
 // Virtual property to check if workshop is full
 workshopSchema.virtual('isFull').get(function () {
   return this.enrolledCount >= this.capacity;
+});
+// Virtual property: true only when the facilitator entered a price above 0
+workshopSchema.virtual('isPaid').get(function () {
+  return typeof this.price === 'number' && this.price > 0;
 });
 
 // Instance Method: Increment Enrolled Count
