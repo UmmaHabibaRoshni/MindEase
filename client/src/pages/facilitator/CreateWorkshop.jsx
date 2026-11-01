@@ -29,6 +29,7 @@ const EMPTY = {
   mode: "Online",
   locationOrLink: "",
   capacity: 20,
+  price: "",
 };
 
 const labelStyle = { display: "block", fontSize: "13px", fontWeight: "600", color: "#2d3748", marginBottom: "6px" };
@@ -52,6 +53,16 @@ export default function CreateWorkshop() {
     if (!form.date) return setError("Choose a date.");
     if (!form.time) return setError("Choose a start time.");
 
+    // T17.7 - price is optional. Blank means free, so it is left out of the
+    // request entirely rather than sent as an empty string.
+    const priceEntered = String(form.price).trim();
+    if (priceEntered !== "") {
+      const price = Number(priceEntered);
+      if (!Number.isFinite(price) || price < 0) {
+        return setError("Price must be a number, 0 or more. Leave it blank for a free workshop.");
+      }
+    }
+
     setSaving(true);
     try {
       await createWorkshop({
@@ -63,8 +74,13 @@ export default function CreateWorkshop() {
         mode: form.mode,
         locationOrLink: form.locationOrLink.trim(),
         capacity: Number(form.capacity),
+        ...(priceEntered === "" ? {} : { price: Number(priceEntered) }),
       });
-      setSuccess("Workshop created. Seekers can enroll now.");
+      setSuccess(
+        Number(priceEntered) > 0
+          ? `Workshop created at ${Number(priceEntered)} BDT. Seekers can pay and enroll now.`
+          : "Workshop created. Seekers can enroll now."
+      );
       setForm(EMPTY);
     } catch (err) {
       setError(errorMessage(err, "Could not create the workshop. Try again."));
@@ -137,6 +153,24 @@ export default function CreateWorkshop() {
               onChange={set("capacity")}
             />
           </div>
+        </div>
+
+        <div style={fieldStyle}>
+          <label htmlFor="price" style={labelStyle}>Price (BDT)</label>
+          <input
+            id="price"
+            type="number"
+            min={0}
+            step="1"
+            placeholder="Leave blank for a free workshop"
+            style={inputStyle}
+            value={form.price}
+            onChange={set("price")}
+          />
+          <p style={{ color: "#718096", fontSize: "12px", margin: "6px 0 0" }}>
+            Blank or 0 keeps the workshop free. Any amount above 0 means seekers
+            pay before they are enrolled.
+          </p>
         </div>
 
         <div style={fieldStyle}>

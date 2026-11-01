@@ -6,6 +6,13 @@ import {
   cancelEnrollment,
   errorMessage,
 } from "../../api/workshopApi";
+import { startWorkshopPayment, goToGateway } from "../../api/paymentApi";
+
+// T17.8 - a workshop is paid only when the facilitator entered an amount above
+// zero. The server sends an isPaid virtual; price is checked too so the card is
+// right even if a caller sends a plain object.
+const isPaid = (w) => w.isPaid === true || Number(w.price) > 0;
+const priceLabel = (w) => (isPaid(w) ? `${Number(w.price)} BDT` : "Free");
 
 const primaryButton = {
   backgroundColor: "#2f855a",
@@ -23,6 +30,11 @@ const disabledButton = {
   backgroundColor: "#e2e8f0",
   color: "#718096",
   cursor: "not-allowed",
+};
+
+const payButton = {
+  ...primaryButton,
+  backgroundColor: "#2b6cb0",
 };
 
 const outlineButton = {
@@ -97,6 +109,27 @@ export default function Workshops() {
     }
   };
 
+  // T17.8 - paid workshops do not enroll here. The server saves a pending
+  // payment and returns the gateway URL; the seeker is enrolled by the
+  // callbacks only once SSLCommerz confirms the payment (T17.4).
+  const handlePay = async (w) => {
+    setBusyId(w._id);
+    setNotice("");
+    try {
+      const { gatewayUrl } = await startWorkshopPayment(w._id);
+      if (!gatewayUrl) {
+        setNotice("Could not start the payment. Try again.");
+        setBusyId(null);
+        return;
+      }
+      goToGateway(gatewayUrl); // leaves the app
+    } catch (err) {
+      setNotice(errorMessage(err, "Could not start the payment. Try again."));
+      setBusyId(null);
+      load();
+    }
+  };
+
   const handleCancel = async (w) => {
     setBusyId(w._id);
     setNotice("");
@@ -121,11 +154,18 @@ export default function Workshops() {
 
     if (enrolled) {
       return (
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <span style={{ color: "#22543d", fontWeight: "600", fontSize: "13px" }}>You are enrolled</span>
-          <button style={outlineButton} disabled={busy} onClick={() => handleCancel(w)}>
-            {busy ? "Cancelling..." : "Cancel enrollment"}
-          </button>
+        <div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <span style={{ color: "#22543d", fontWeight: "600", fontSize: "13px" }}>You are enrolled</span>
+            <button style={outlineButton} disabled={busy} onClick={() => handleCancel(w)}>
+              {busy ? "Cancelling..." : "Cancel enrollment"}
+            </button>
+          </div>
+          {isPaid(w) && (
+            <p style={{ color: "#975a16", fontSize: "12px", margin: "8px 0 0" }}>
+              You paid for this workshop. Cancelling does not refund the fee.
+            </p>
+          )}
         </div>
       );
     }
@@ -133,6 +173,13 @@ export default function Workshops() {
       return (
         <button style={disabledButton} disabled>
           Full
+        </button>
+      );
+    }
+    if (isPaid(w)) {
+      return (
+        <button style={payButton} disabled={busy} onClick={() => handlePay(w)}>
+          {busy ? "Opening payment..." : `Pay ${Number(w.price)} BDT & Enroll`}
         </button>
       );
     }
@@ -171,9 +218,23 @@ export default function Workshops() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
                 <h3 style={{ margin: 0, color: "#2d3748", fontSize: "18px" }}>{w.title}</h3>
-                <span style={{ backgroundColor: "#e2e8f0", color: "#2d3748", padding: "2px 8px", borderRadius: "4px", fontSize: "12px", alignSelf: "flex-start" }}>
-                  {w.mode}
-                </span>
+                <div style={{ display: "flex", gap: "8px", alignSelf: "flex-start" }}>
+                  <span style={{ backgroundColor: "#e2e8f0", color: "#2d3748", padding: "2px 8px", borderRadius: "4px", fontSize: "12px" }}>
+                    {w.mode}
+                  </span>
+                  <span
+                    style={{
+                      backgroundColor: isPaid(w) ? "#bee3f8" : "#c6f6d5",
+                      color: isPaid(w) ? "#2a4365" : "#22543d",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {priceLabel(w)}
+                  </span>
+                </div>
               </div>
 
               <p style={{ color: "#4a5568", fontSize: "14px", margin: "8px 0" }}>{w.description}</p>

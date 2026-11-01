@@ -1,0 +1,352 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "MindEase BL-17 Payments (T17.6)",
+  "dateExported": "2026-11-01T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "settings": {
+    "envVars": [
+      { "name": "baseUrl", "value": "http://localhost:5000" },
+      { "name": "facilitatorToken", "value": "<JWT from POST /api/auth/login as facilitator@test.com / Facilitator@12345>" },
+      { "name": "seekerToken", "value": "<JWT of any seeker>" },
+      { "name": "paidWorkshopId", "value": "<set from request 02>" },
+      { "name": "freeWorkshopId", "value": "<set from request 01>" }
+    ],
+    "options": {
+      "followRedirect": false,
+      "note": "Turn OFF 'Follow redirects' in Thunder Client settings before running 12-16: the callbacks answer 303 and the assertions check that status and the Location header. With redirects on, Thunder Client follows into the React app and reports 200 instead."
+    }
+  },
+  "requests": [
+    {
+      "_id": "bl17-01",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "01 Facilitator creates a FREE workshop (no price)",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"QA T17.6 free workshop\",\n  \"description\": \"Temporary workshop for the payment API checks. No price is sent.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/qa-t17-6\",\n  \"capacity\": 20\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "json.workshop.isPaid", "action": "equal", "value": "false" },
+        { "type": "set-env-var", "custom": "json.workshop._id", "action": "setto", "value": "{{freeWorkshopId}}" }
+      ]
+    },
+    {
+      "_id": "bl17-02",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "02 Facilitator creates a PAID workshop (price 500)",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 20000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"QA T17.6 paid workshop\",\n  \"description\": \"Temporary workshop for the payment API checks. Priced at 500 BDT.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/qa-t17-6\",\n  \"capacity\": 20,\n  \"price\": 500\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "201" },
+        { "type": "json-query", "custom": "json.workshop.price", "action": "equal", "value": "500" },
+        { "type": "json-query", "custom": "json.workshop.isPaid", "action": "equal", "value": "true" },
+        { "type": "set-env-var", "custom": "json.workshop._id", "action": "setto", "value": "{{paidWorkshopId}}" }
+      ]
+    },
+    {
+      "_id": "bl17-03",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "03 A negative price is refused",
+      "url": "{{baseUrl}}/api/workshops",
+      "method": "POST",
+      "sortNum": 30000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"QA T17.6 negative price\",\n  \"description\": \"This workshop must never be created because the price is below zero.\",\n  \"date\": \"2026-12-01\",\n  \"time\": \"10:30 AM\",\n  \"mode\": \"Online\",\n  \"locationOrLink\": \"https://meet.example.com/qa-t17-6\",\n  \"capacity\": 20,\n  \"price\": -5\n}"
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "Price must be a number" }
+      ]
+    },
+    {
+      "_id": "bl17-04",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "04 Pay blocked without a token",
+      "url": "{{baseUrl}}/api/workshops/{{paidWorkshopId}}/pay",
+      "method": "POST",
+      "sortNum": 40000,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl17-05",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "05 Pay blocked for a facilitator (seeker only)",
+      "url": "{{baseUrl}}/api/workshops/{{paidWorkshopId}}/pay",
+      "method": "POST",
+      "sortNum": 50000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "403" }]
+    },
+    {
+      "_id": "bl17-06",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "06 Pay with an id that is not an ObjectId",
+      "url": "{{baseUrl}}/api/workshops/not-an-id/pay",
+      "method": "POST",
+      "sortNum": 60000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "Invalid workshop id" }
+      ]
+    },
+    {
+      "_id": "bl17-07",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "07 Pay for a workshop that does not exist (needs SSLC keys)",
+      "url": "{{baseUrl}}/api/workshops/000000000000000000000000/pay",
+      "method": "POST",
+      "sortNum": 70000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }],
+      "docs": "startPayment checks SSLC_STORE_ID / SSLC_STORE_PASSWD / BACKEND_URL before it looks the workshop up. Without those keys in server/.env this answers 500 'Payment gateway is not configured' and the 404 underneath cannot be reached."
+    },
+    {
+      "_id": "bl17-08",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "08 Pay refused for a FREE workshop (needs SSLC keys)",
+      "url": "{{baseUrl}}/api/workshops/{{freeWorkshopId}}/pay",
+      "method": "POST",
+      "sortNum": 80000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "free" }
+      ],
+      "docs": "Same caveat as request 07: without the SSLC keys this answers 500 before the free check is reached."
+    },
+    {
+      "_id": "bl17-09",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "09 Seeker starts a payment and gets a gateway URL (needs SSLC keys)",
+      "url": "{{baseUrl}}/api/workshops/{{paidWorkshopId}}/pay",
+      "method": "POST",
+      "sortNum": 90000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.gatewayUrl", "action": "contains", "value": "sslcommerz" }
+      ],
+      "docs": "The happy path. Needs SSLC_STORE_ID, SSLC_STORE_PASSWD and BACKEND_URL in server/.env. A pending Payment row is written before the gateway call, so re-running leaves extra pending rows behind."
+    },
+    {
+      "_id": "bl17-10",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "10 Plain enroll refused for a PAID workshop",
+      "url": "{{baseUrl}}/api/workshops/{{paidWorkshopId}}/enroll",
+      "method": "POST",
+      "sortNum": 100000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "Pay & Enroll" }
+      ]
+    },
+    {
+      "_id": "bl17-11",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "11 Plain enroll still works for a FREE workshop",
+      "url": "{{baseUrl}}/api/workshops/{{freeWorkshopId}}/enroll",
+      "method": "POST",
+      "sortNum": 110000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{seekerToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "201" }],
+      "docs": "Leaves the seeker enrolled. Send DELETE to the same URL afterwards to put it back."
+    },
+    {
+      "_id": "bl17-12",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "12 Success callback with no fields is refused",
+      "url": "{{baseUrl}}/api/payments/success",
+      "method": "POST",
+      "sortNum": 120000,
+      "headers": [{ "name": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+      "params": [],
+      "body": { "type": "formencoded", "form": [] },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "303" },
+        { "type": "res-header", "custom": "location", "action": "contains", "value": "/payment/fail?reason=invalid" }
+      ],
+      "docs": "Turn OFF follow-redirects first. The gateway posts form-encoded fields, not JSON."
+    },
+    {
+      "_id": "bl17-13",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "13 Success callback with an unknown tran_id is refused",
+      "url": "{{baseUrl}}/api/payments/success",
+      "method": "POST",
+      "sortNum": 130000,
+      "headers": [{ "name": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+      "params": [],
+      "body": {
+        "type": "formencoded",
+        "form": [
+          { "name": "tran_id", "value": "ME-does-not-exist" },
+          { "name": "val_id", "value": "nope" }
+        ]
+      },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "303" },
+        { "type": "res-header", "custom": "location", "action": "contains", "value": "/payment/fail?reason=invalid" }
+      ],
+      "docs": "This is the forged-callback check: an attacker who posts a made-up tran_id must not get enrolled."
+    },
+    {
+      "_id": "bl17-14",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "14 Success callback with a tran_id but no val_id is refused",
+      "url": "{{baseUrl}}/api/payments/success",
+      "method": "POST",
+      "sortNum": 140000,
+      "headers": [{ "name": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+      "params": [],
+      "body": { "type": "formencoded", "form": [{ "name": "tran_id", "value": "only-tran-id" }] },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "303" },
+        { "type": "res-header", "custom": "location", "action": "contains", "value": "/payment/fail?reason=invalid" }
+      ]
+    },
+    {
+      "_id": "bl17-15",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "15 Fail callback redirects to the failed page",
+      "url": "{{baseUrl}}/api/payments/fail",
+      "method": "POST",
+      "sortNum": 150000,
+      "headers": [{ "name": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+      "params": [],
+      "body": { "type": "formencoded", "form": [{ "name": "tran_id", "value": "ME-does-not-exist" }] },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "303" },
+        { "type": "res-header", "custom": "location", "action": "contains", "value": "/payment/fail?reason=gateway" }
+      ]
+    },
+    {
+      "_id": "bl17-16",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "16 Cancel callback redirects to the cancelled page",
+      "url": "{{baseUrl}}/api/payments/cancel",
+      "method": "POST",
+      "sortNum": 160000,
+      "headers": [{ "name": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+      "params": [],
+      "body": { "type": "formencoded", "form": [{ "name": "tran_id", "value": "ME-does-not-exist" }] },
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "303" },
+        { "type": "res-header", "custom": "location", "action": "contains", "value": "/payment/cancel" }
+      ]
+    },
+    {
+      "_id": "bl17-17",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "17 Cleanup: cancel the paid QA workshop",
+      "url": "{{baseUrl}}/api/workshops/{{paidWorkshopId}}/cancel",
+      "method": "PATCH",
+      "sortNum": 170000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    },
+    {
+      "_id": "bl17-18",
+      "colId": "bl17",
+      "containerId": "",
+      "name": "18 Cleanup: cancel the free QA workshop",
+      "url": "{{baseUrl}}/api/workshops/{{freeWorkshopId}}/cancel",
+      "method": "PATCH",
+      "sortNum": 180000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }
+      ],
+      "params": [],
+      "body": { "type": "json", "raw": "{}" },
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "200" }]
+    }
+  ]
+}
