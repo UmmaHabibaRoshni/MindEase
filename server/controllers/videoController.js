@@ -1,6 +1,10 @@
 const User = require("../models/User");
 const { roomFor } = require("../utils/videoRoom");
-const { workshopVideoAccess, caseVideoAccess } = require("../utils/videoAccess");
+const {
+  workshopVideoAccess,
+  caseVideoAccess,
+  requestVideoAccess,
+} = require("../utils/videoAccess");
 
 // T18.2 / T18.3 - video room details for an online workshop and for a case.
 //
@@ -42,19 +46,36 @@ exports.getWorkshopRoom = async (req, res) => {
   }
 };
 
+// Shared by the case and request lookups: both end at the same assignment,
+// so both must produce the same room.
+const respondWithCaseRoom = async (req, res, access) => {
+  const room = roomFor("case", access.assignment._id, {
+    displayName: await displayNameOf(req.user.id),
+    subject: "MindEase consultation",
+    isModerator: access.isModerator,
+  });
+  res.json({ ...room, case: { id: access.assignment._id } });
+};
+
+// GET /api/video/request/:id   (the seeker who raised it, or the assigned
+// psychologist). The seeker's dashboard lists requests, not case assignments,
+// so this is how they reach the room (T18.9).
+exports.getRequestRoom = async (req, res) => {
+  try {
+    const access = await requestVideoAccess(req.user, req.params.id);
+    if (!access.ok) return res.status(access.status).json({ message: access.message });
+    await respondWithCaseRoom(req, res, access);
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
 // GET /api/video/case/:id   (the assigned psychologist, or the seeker on the case)
 exports.getCaseRoom = async (req, res) => {
   try {
     const access = await caseVideoAccess(req.user, req.params.id);
     if (!access.ok) return res.status(access.status).json({ message: access.message });
-
-    const room = roomFor("case", access.assignment._id, {
-      displayName: await displayNameOf(req.user.id),
-      subject: "MindEase consultation",
-      isModerator: access.isModerator,
-    });
-
-    res.json({ ...room, case: { id: access.assignment._id } });
+    await respondWithCaseRoom(req, res, access);
   } catch (err) {
     handleError(err, res);
   }

@@ -6,6 +6,15 @@ import {
   getCasePrivateNotes,
   addCasePrivateNote,
 } from '../../api/psychologistApi';
+import JoinVideoButton from '../../components/video/JoinVideoButton';
+
+// T18.8 - the API answers { case: {...} } with lowercase statuses, while the
+// rest of this page was written against a flat object with capitalised ones.
+// Normalising here keeps the video button correct either way, without
+// rewriting the page around it.
+const unwrapCase = (data) => data?.case || data || null;
+const caseStatusOf = (data) => String(unwrapCase(data)?.status || '').toLowerCase();
+const caseIdOf = (data) => unwrapCase(data)?._id || null;
 
 const CaseDetailPage = () => {
   const { caseId } = useParams();
@@ -200,6 +209,18 @@ const CaseDetailPage = () => {
                 >
                   Mark Session Completed
                 </button>
+              )}
+
+              {/* T18.8 - the consultation room. Only on an accepted case:
+                  the API refuses any other status, so showing it earlier
+                  would only produce an error the psychologist cannot act on. */}
+              {caseStatusOf(caseData) === 'accepted' && caseIdOf(caseData) && (
+                <JoinVideoButton
+                  kind="case"
+                  id={caseIdOf(caseData)}
+                  label="Join video consultation"
+                  startLabel="Start video consultation"
+                />
               )}
             </div>
           </div>

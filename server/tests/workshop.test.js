@@ -50,6 +50,11 @@ jest.mock("../models/Workshop", () => {
           this.status = "Cancelled";
           return this;
         },
+        // listAvailableWorkshops serialises each row before adding isEnrolled
+        toJSON() {
+          const { set, save, cancelWorkshop, toJSON, ...plain } = this;
+          return plain;
+        },
       };
       mockStore.workshops.push(row);
       return row;
@@ -82,10 +87,16 @@ jest.mock("../models/Workshop", () => {
 });
 
 jest.mock("../models/WorkshopEnrollment", () => {
+  const mockIn = (value, filter) =>
+    filter && filter.$in
+      ? filter.$in.some((v) => mockSame(value, v))
+      : mockSame(value, filter);
+
   const matches = (e, f) =>
-    (f.workshop === undefined || mockSame(e.workshop, f.workshop)) &&
+    (f.workshop === undefined || mockIn(e.workshop, f.workshop)) &&
     (f.seeker === undefined || mockSame(e.seeker, f.seeker)) &&
-    (f.status === undefined || e.status === f.status);
+    (f.status === undefined ||
+      (f.status.$in ? f.status.$in.includes(e.status) : e.status === f.status));
 
   return {
     create: jest.fn(async (data) => {
@@ -383,6 +394,38 @@ describe("listAvailableWorkshops", () => {
     expect(r.body).toHaveLength(1);
     expect(r.body[0].title).toBe("Open workshop one");
   });
+
+  // The page reads isEnrolled to decide between "Enroll" and "You are
+  // enrolled", and since T18.7 to decide whether to offer the video room.
+  // Before this it was never sent, so a reload lost the fact.
+  test("marks a workshop the caller is already enrolled in", async () => {
+    const w = await makeWorkshop({ title: "Already joined" });
+    const seeker = seekerUser();
+    await WorkshopEnrollment.create({ workshop: w._id, seeker: seeker.id });
+
+    const r = await call(listAvailableWorkshops, { user: seeker });
+
+    expect(r.status).toBe(200);
+    expect(r.body[0].isEnrolled).toBe(true);
+  });
+
+  test("does not mark a workshop the caller has not joined", async () => {
+    await makeWorkshop({ title: "Not joined" });
+
+    const r = await call(listAvailableWorkshops, { user: seekerUser() });
+
+    expect(r.body[0].isEnrolled).toBe(false);
+  });
+
+  test("does not mark another seeker's enrollment as the caller's", async () => {
+    const w = await makeWorkshop({ title: "Someone else joined" });
+    await WorkshopEnrollment.create({ workshop: w._id, seeker: newId() });
+
+    const r = await call(listAvailableWorkshops, { user: seekerUser() });
+
+    expect(r.body[0].isEnrolled).toBe(false);
+  });
+
 
   test("hides workshops whose date has passed", async () => {
     await makeWorkshop({ title: "Old workshop", date: daysFromNow(-5) });
