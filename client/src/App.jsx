@@ -22,6 +22,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import CrisisRequestForm from "./pages/seeker/CrisisRequestForm";
 import Workshops from "./pages/seeker/Workshops";
 import CreateWorkshop from "./pages/facilitator/CreateWorkshop";
+import VideoRoom from "./components/video/VideoRoom";
+import CaseDetailPage from "./pages/psychologist/CaseDetailPage";
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
 import PaymentFailed from "./pages/payment/PaymentFailed";
 import PaymentCancelled from "./pages/payment/PaymentCancelled";
@@ -100,6 +102,17 @@ export default function App() {
 
         {/* T8.8 - admin account verification queue */}
         <Route path="verifications" element={<RequireRole role="admin"><Verifications /></RequireRole>} />
+
+        {/* T18.6 - video room landing page. kind is workshop, case or request;
+            who may open which room is decided by the API, not by this route. */}
+        <Route path="video/:kind/:id" element={<VideoRoom />} />
+
+        {/* T18.8 - the psychologist case page. It existed but was never
+            routed, so the Join video consultation button had nowhere to live. */}
+        <Route
+          path="psychologist/cases/:caseId"
+          element={<RequireRole role="psychologist"><CaseDetailPage /></RequireRole>}
+        />
 
         {/* T16.9 - admin user management */}
         <Route path="users" element={<RequireRole role="admin"><ManageUsers /></RequireRole>} />

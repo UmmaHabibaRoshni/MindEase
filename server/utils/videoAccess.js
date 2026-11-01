@@ -84,4 +84,39 @@ async function caseVideoAccess(user, caseId) {
   return deny(403, "You are not part of this case.");
 }
 
-module.exports = { workshopVideoAccess, caseVideoAccess };
+/**
+ * The same consultation room, found from the crisis request instead of the
+ * case id. The seeker never sees a CaseAssignment id - their dashboard lists
+ * requests - so without this they could not reach the room at all (T18.9).
+ *
+ * The room is still derived from the ASSIGNMENT id, so this returns exactly
+ * the room caseVideoAccess returns. Both sides must land in the same place.
+ */
+async function requestVideoAccess(user, requestId) {
+  if (!mongoose.isValidObjectId(requestId)) {
+    return deny(400, "Invalid request id");
+  }
+
+  const assignment = await CaseAssignment.findOne({
+    request: requestId,
+    status: "accepted",
+  })
+    .select("psychologist request status")
+    .populate("request", "seeker");
+
+  if (!assignment) {
+    return deny(404, "There is no accepted consultation for this request yet.");
+  }
+
+  if (user.role === "psychologist" && same(assignment.psychologist, user.id)) {
+    return { ok: true, assignment, isModerator: true };
+  }
+
+  if (user.role === "seeker" && same(assignment.request?.seeker, user.id)) {
+    return { ok: true, assignment, isModerator: false };
+  }
+
+  return deny(403, "You are not part of this case.");
+}
+
+module.exports = { workshopVideoAccess, caseVideoAccess, requestVideoAccess };

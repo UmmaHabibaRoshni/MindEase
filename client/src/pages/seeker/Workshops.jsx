@@ -7,11 +7,16 @@ import {
   errorMessage,
 } from "../../api/workshopApi";
 import { startWorkshopPayment, goToGateway } from "../../api/paymentApi";
+import JoinVideoButton from "../../components/video/JoinVideoButton";
 
 // T17.8 - a workshop is paid only when the facilitator entered an amount above
 // zero. The server sends an isPaid virtual; price is checked too so the card is
 // right even if a caller sends a plain object.
 const isPaid = (w) => w.isPaid === true || Number(w.price) > 0;
+
+// T18.7 - only an online workshop that is still going ahead has a room. The
+// API checks this again; this just avoids showing a button that would 400.
+const hasVideoRoom = (w) => w.mode === "Online" && w.status !== "Cancelled";
 const priceLabel = (w) => (isPaid(w) ? `${Number(w.price)} BDT` : "Free");
 
 const primaryButton = {
@@ -161,6 +166,11 @@ export default function Workshops() {
               {busy ? "Cancelling..." : "Cancel enrollment"}
             </button>
           </div>
+          {hasVideoRoom(w) && (
+            <div style={{ marginTop: "12px" }}>
+              <JoinVideoButton kind="workshop" id={w._id} label="Join video session" />
+            </div>
+          )}
           {isPaid(w) && (
             <p style={{ color: "#975a16", fontSize: "12px", margin: "8px 0 0" }}>
               You paid for this workshop. Cancelling does not refund the fee.

@@ -1,0 +1,267 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "MindEase BL-18 Video rooms (T18.5)",
+  "dateExported": "2026-11-01T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "settings": {
+    "envVars": [
+      { "name": "baseUrl", "value": "http://localhost:5000" },
+      { "name": "facilitatorToken", "value": "<JWT from POST /api/auth/login as facilitator@test.com / Facilitator@12345>" },
+      { "name": "seekerToken", "value": "<JWT of seeker@test.com, enrolled in onlineWorkshopId>" },
+      { "name": "otherSeekerToken", "value": "<JWT of a seeker NOT enrolled, e.g. e2e.second.seeker@test.com>" },
+      { "name": "psychologistToken", "value": "<JWT of psychologist@mindease.test / Psychologist@123>" },
+      { "name": "onlineWorkshopId", "value": "<an Online, Scheduled workshop owned by the facilitator>" },
+      { "name": "acceptedCaseId", "value": "<a CaseAssignment with status accepted for the psychologist>" },
+      { "name": "acceptedRequestId", "value": "<the crisis request that case belongs to>" },
+      { "name": "roomName", "value": "<set from request 05, compared in request 06>" }
+    ],
+    "options": {
+      "note": "The point of this collection is the access rules: the Jitsi room itself is open to anyone who knows its name, so these endpoints are the only thing deciding who is told it. Requests 05 and 06 together are the most important pair - both sides of a call MUST get the same roomName."
+    }
+  },
+  "requests": [
+    {
+      "_id": "bl18-01",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "01 Workshop room blocked without a token",
+      "url": "{{baseUrl}}/api/video/workshop/{{onlineWorkshopId}}",
+      "method": "GET",
+      "sortNum": 10000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl18-02",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "02 Workshop room blocked for a psychologist (wrong role)",
+      "url": "{{baseUrl}}/api/video/workshop/{{onlineWorkshopId}}",
+      "method": "GET",
+      "sortNum": 20000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{psychologistToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "403" }]
+    },
+    {
+      "_id": "bl18-03",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "03 Workshop room with an id that is not an ObjectId",
+      "url": "{{baseUrl}}/api/video/workshop/not-an-id",
+      "method": "GET",
+      "sortNum": 30000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "Invalid workshop id" }
+      ]
+    },
+    {
+      "_id": "bl18-04",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "04 Workshop room for a workshop that does not exist",
+      "url": "{{baseUrl}}/api/video/workshop/000000000000000000000000",
+      "method": "GET",
+      "sortNum": 40000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }]
+    },
+    {
+      "_id": "bl18-05",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "05 Facilitator who owns it gets the room, as moderator",
+      "url": "{{baseUrl}}/api/video/workshop/{{onlineWorkshopId}}",
+      "method": "GET",
+      "sortNum": 50000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.isModerator", "action": "equal", "value": "true" },
+        { "type": "json-query", "custom": "json.url", "action": "contains", "value": "mindease-workshop-" },
+        { "type": "set-env-var", "custom": "json.roomName", "action": "setto", "value": "{{roomName}}" }
+      ]
+    },
+    {
+      "_id": "bl18-06",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "06 Enrolled seeker gets the SAME room, not as moderator",
+      "url": "{{baseUrl}}/api/video/workshop/{{onlineWorkshopId}}",
+      "method": "GET",
+      "sortNum": 60000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.isModerator", "action": "equal", "value": "false" },
+        { "type": "json-query", "custom": "json.roomName", "action": "equal", "value": "{{roomName}}" }
+      ],
+      "docs": "The most important check in this collection. If these two room names ever differ, the facilitator and the seeker sit in two different empty Jitsi rooms. The usual cause is a different VIDEO_ROOM_SECRET between machines."
+    },
+    {
+      "_id": "bl18-07",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "07 A seeker who is not enrolled is refused",
+      "url": "{{baseUrl}}/api/video/workshop/{{onlineWorkshopId}}",
+      "method": "GET",
+      "sortNum": 70000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{otherSeekerToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "403" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "not part of this workshop" }
+      ]
+    },
+    {
+      "_id": "bl18-08",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "08 Case room blocked without a token",
+      "url": "{{baseUrl}}/api/video/case/{{acceptedCaseId}}",
+      "method": "GET",
+      "sortNum": 80000,
+      "headers": [],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "401" }]
+    },
+    {
+      "_id": "bl18-09",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "09 Case room blocked for a facilitator (wrong role)",
+      "url": "{{baseUrl}}/api/video/case/{{acceptedCaseId}}",
+      "method": "GET",
+      "sortNum": 90000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{facilitatorToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "403" }]
+    },
+    {
+      "_id": "bl18-10",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "10 Case room with a bad id",
+      "url": "{{baseUrl}}/api/video/case/nope",
+      "method": "GET",
+      "sortNum": 100000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{psychologistToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "400" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "Invalid case id" }
+      ]
+    },
+    {
+      "_id": "bl18-11",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "11 Case room for a case that does not exist",
+      "url": "{{baseUrl}}/api/video/case/000000000000000000000000",
+      "method": "GET",
+      "sortNum": 110000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{psychologistToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "404" }]
+    },
+    {
+      "_id": "bl18-12",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "12 Assigned psychologist gets the consultation room",
+      "url": "{{baseUrl}}/api/video/case/{{acceptedCaseId}}",
+      "method": "GET",
+      "sortNum": 120000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{psychologistToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.isModerator", "action": "equal", "value": "true" },
+        { "type": "json-query", "custom": "json.subject", "action": "equal", "value": "MindEase consultation" },
+        { "type": "set-env-var", "custom": "json.roomName", "action": "setto", "value": "{{roomName}}" }
+      ]
+    },
+    {
+      "_id": "bl18-13",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "13 The seeker on the case gets the same room",
+      "url": "{{baseUrl}}/api/video/case/{{acceptedCaseId}}",
+      "method": "GET",
+      "sortNum": 130000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.isModerator", "action": "equal", "value": "false" },
+        { "type": "json-query", "custom": "json.roomName", "action": "equal", "value": "{{roomName}}" }
+      ]
+    },
+    {
+      "_id": "bl18-14",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "14 A seeker who is not on the case is refused",
+      "url": "{{baseUrl}}/api/video/case/{{acceptedCaseId}}",
+      "method": "GET",
+      "sortNum": 140000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{otherSeekerToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "403" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "not part of this case" }
+      ]
+    },
+    {
+      "_id": "bl18-15",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "15 Seeker reaches the same room through the REQUEST id",
+      "url": "{{baseUrl}}/api/video/request/{{acceptedRequestId}}",
+      "method": "GET",
+      "sortNum": 150000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "200" },
+        { "type": "json-query", "custom": "json.roomName", "action": "equal", "value": "{{roomName}}" }
+      ],
+      "docs": "The seeker's dashboard lists crisis requests and never sees a CaseAssignment id, so this is how they reach the consultation. It must resolve to the same room as request 12."
+    },
+    {
+      "_id": "bl18-16",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "16 Request room for a request with no accepted case",
+      "url": "{{baseUrl}}/api/video/request/000000000000000000000000",
+      "method": "GET",
+      "sortNum": 160000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{seekerToken}}" }],
+      "params": [],
+      "tests": [
+        { "type": "res-code", "custom": "", "action": "equal", "value": "404" },
+        { "type": "json-query", "custom": "json.message", "action": "contains", "value": "no accepted consultation" }
+      ]
+    },
+    {
+      "_id": "bl18-17",
+      "colId": "bl18",
+      "containerId": "",
+      "name": "17 A seeker who did not raise the request is refused",
+      "url": "{{baseUrl}}/api/video/request/{{acceptedRequestId}}",
+      "method": "GET",
+      "sortNum": 170000,
+      "headers": [{ "name": "Authorization", "value": "Bearer {{otherSeekerToken}}" }],
+      "params": [],
+      "tests": [{ "type": "res-code", "custom": "", "action": "equal", "value": "403" }]
+    }
+  ]
+}

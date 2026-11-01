@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import ChatWindow from "../../components/chat/ChatWindow";
 import { getUserIdFromToken } from "../../utils/getUserId";
+import JoinVideoButton from "../../components/video/JoinVideoButton";
 
 export default function SeekerDashboard() {
   const [requests, setRequests] = useState([]);
@@ -105,6 +106,20 @@ export default function SeekerDashboard() {
                   >
                     Open chat
                   </button>
+                )}
+
+                {/* T18.9 - a consultation room exists only once a psychologist
+                    has accepted the escalated case. The seeker never sees a
+                    case id, so the button goes through the request instead;
+                    the API answers 404 until the case is accepted. */}
+                {req.status === "escalated" && (
+                  <div style={{ marginTop: "10px" }}>
+                    <JoinVideoButton
+                      kind="request"
+                      id={req._id}
+                      label="Join video consultation"
+                    />
+                  </div>
                 )}
 
                 <div style={{ display: "flex", justifyContent: "space-between", color: "#718096", fontSize: "12px", marginTop: "12px", borderTop: "1px solid #edf2f7", paddingTop: "8px" }}>

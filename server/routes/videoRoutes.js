@@ -2,7 +2,11 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const allowRoles = require("../middleware/role");
-const { getWorkshopRoom, getCaseRoom } = require("../controllers/videoController");
+const {
+  getWorkshopRoom,
+  getCaseRoom,
+  getRequestRoom,
+} = require("../controllers/videoController");
 
 // BL-18 video rooms (T18.2, T18.3).
 //
@@ -11,5 +15,6 @@ const { getWorkshopRoom, getCaseRoom } = require("../controllers/videoController
 // decided per record in utils/videoAccess.js, not here.
 router.get("/workshop/:id", auth, allowRoles("facilitator", "seeker"), getWorkshopRoom);
 router.get("/case/:id", auth, allowRoles("psychologist", "seeker"), getCaseRoom);
+router.get("/request/:id", auth, allowRoles("psychologist", "seeker"), getRequestRoom);
 
 module.exports = router;

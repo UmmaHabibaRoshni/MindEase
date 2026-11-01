@@ -199,7 +199,25 @@ exports.listAvailableWorkshops = async (req, res) => {
     })
       .populate("facilitator", "name")
       .sort({ date: 1 });
-    res.json(workshops);
+
+    // Which of these the caller is already in. The page reads w.isEnrolled to
+    // decide between "Enroll" and "You are enrolled", and without this it only
+    // ever knew about enrollments made in the current page session - after a
+    // reload an enrolled seeker was offered "Enroll" again, and (since T18.7)
+    // never saw the Join video session button at all.
+    const mine = await WorkshopEnrollment.find({
+      seeker: req.user.id,
+      workshop: { $in: workshops.map((w) => w._id) },
+      status: { $in: ["Enrolled", "Attended"] },
+    }).select("workshop");
+    const enrolledIds = new Set(mine.map((e) => String(e.workshop)));
+
+    res.json(
+      workshops.map((w) => ({
+        ...w.toJSON(),
+        isEnrolled: enrolledIds.has(String(w._id)),
+      }))
+    );
   } catch (err) {
     handleError(err, res);
   }
