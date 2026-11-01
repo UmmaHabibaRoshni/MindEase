@@ -22,6 +22,9 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import CrisisRequestForm from "./pages/seeker/CrisisRequestForm";
 import Workshops from "./pages/seeker/Workshops";
 import CreateWorkshop from "./pages/facilitator/CreateWorkshop";
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentFailed from "./pages/payment/PaymentFailed";
+import PaymentCancelled from "./pages/payment/PaymentCancelled";
 
 function Placeholder({ title }) {
   return (
@@ -62,6 +65,15 @@ export default function App() {
         <Route path="/resources" element={<ResourceLibrary />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* T17.9 - SSLCommerz redirects the seeker's browser back to these.
+            They sit outside /dashboard and outside RequireRole on purpose: the
+            gateway hands us a plain browser navigation, and a seeker who lands
+            here should always be told what happened to their money rather than
+            be bounced to the login page. */}
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/fail" element={<PaymentFailed />} />
+        <Route path="/payment/cancel" element={<PaymentCancelled />} />
       </Route>
 
       {/* Logged-in pages: Navbar + Sidebar + content */}
