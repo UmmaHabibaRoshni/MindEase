@@ -54,6 +54,12 @@ body {
   font-weight: 500;
   letter-spacing: -0.015em;
   color: var(--me-green-deep);
+  /* A transformed element paints above ordinary in-flow content, so a
+     drifting panel could slide over the heading above it and cut the words
+     in half. Giving headings their own paint layer puts the text back on
+     top: a panel that reaches one now passes behind it. */
+  position: relative;
+  z-index: 1;
 }
 
 .me-app p,
@@ -404,6 +410,40 @@ body {
 .me-app button[disabled] {
   opacity: 0.65;
   cursor: default;
+}
+
+/* Bare buttons.
+   Some pages render actions as a plain <button> with no class and no inline
+   style at all, relying on the browser's default chrome. Giving those a pill
+   radius and a light sweep, as the rules above do, made a mess: native grey
+   button, squashed into a pill, with the label spilling out of it. They get a
+   real secondary-button treatment instead - glass, green outline, green text
+   - so they read as deliberate next to the solid primary actions.
+
+   `:not([style*="background"])` skips anything the page coloured itself, and
+   `:not([class])` skips anything styled through a stylesheet, including the
+   utility-class page and the navbar. */
+.me-app button:not([style*="background"]):not([class]) {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(47, 107, 58, 0.3);
+  color: var(--me-green-deep);
+  padding: 0.5rem 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -16px rgba(32, 72, 44, 0.8);
+}
+
+.me-app button:not([style*="background"]):not([class]):hover {
+  background: rgba(141, 198, 63, 0.18);
+  border-color: rgba(47, 107, 58, 0.5);
+}
+
+/* the actions on a row sit in a line with room between them */
+.me-app button:not([style*="background"]):not([class]) + button {
+  margin-left: 0.5rem;
 }
 
 /* Icon-only buttons - the notification bell, the password eye - are glyphs,
