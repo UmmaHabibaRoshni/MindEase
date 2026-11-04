@@ -760,23 +760,30 @@ body.me-intro-running .navbar-brand {
    reported blur came from: a rotated layer has its text resampled every
    frame, and on a panel of body copy that is plainly visible. Translation
    alone does not resample, so the float stays and the text stays sharp. */
+/* A transformed element paints above ordinary in-flow content, so a panel
+   that drifted 16px up slid over the heading sitting above it and cut the
+   text in half. Two changes keep that from happening: the vertical travel is
+   now 10px rather than 16-18, and every floating surface is given at least
+   14px of clearance below (see `.me-app .me-card` and friends). The headings
+   are also lifted into their own paint layer, so even a surface that does
+   reach them passes behind the words instead of through them. */
 @keyframes me-float-a {
   0%   { transform: translate3d(0, 0, 0); }
-  33%  { transform: translate3d(5px, -16px, 0); }
-  66%  { transform: translate3d(-4px, -8px, 0); }
+  33%  { transform: translate3d(5px, -10px, 0); }
+  66%  { transform: translate3d(-4px, -5px, 0); }
   100% { transform: translate3d(0, 0, 0); }
 }
 @keyframes me-float-b {
-  0%   { transform: translate3d(0, -6px, 0); }
-  40%  { transform: translate3d(-6px, 10px, 0); }
-  75%  { transform: translate3d(4px, -4px, 0); }
-  100% { transform: translate3d(0, -6px, 0); }
+  0%   { transform: translate3d(0, -4px, 0); }
+  40%  { transform: translate3d(-6px, 7px, 0); }
+  75%  { transform: translate3d(4px, -3px, 0); }
+  100% { transform: translate3d(0, -4px, 0); }
 }
 @keyframes me-float-c {
-  0%   { transform: translate3d(0, 8px, 0); }
-  45%  { transform: translate3d(7px, -12px, 0); }
-  80%  { transform: translate3d(-3px, 3px, 0); }
-  100% { transform: translate3d(0, 8px, 0); }
+  0%   { transform: translate3d(0, 5px, 0); }
+  45%  { transform: translate3d(7px, -8px, 0); }
+  80%  { transform: translate3d(-3px, 2px, 0); }
+  100% { transform: translate3d(0, 5px, 0); }
 }
 
 /* Cards, panels and tiles drift on long, offset loops so the page never
@@ -791,6 +798,10 @@ body.me-intro-running .navbar-brand {
 .me-app [style*="background: rgb(255, 255, 255)"] {
   animation: me-float-a 11s ease-in-out infinite;
   will-change: transform;
+  /* Room to move without reaching a heading. These panels carry their own
+     inline margins where the page author set one, and an inline style wins
+     over this, so it only supplies a gap where there was none. */
+  margin-block: 14px;
 }
 
 .me-app .me-card:nth-of-type(2n),
