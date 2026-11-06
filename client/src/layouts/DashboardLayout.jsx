@@ -1,10 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
-import AmbientBackground from "../components/experience/AmbientBackground";
-import ParticleField from "../components/experience/ParticleField";
-import CustomCursor from "../components/experience/CustomCursor";
-import PointerEffects from "../components/experience/PointerEffects";
 import "../styles/experience.css";
 import "../styles/tw-compat.css";
 import "../styles/theme.css";
@@ -26,10 +22,6 @@ export default function DashboardLayout() {
 
   return (
     <div className="dashboard-layout me-app me-app-dashboard">
-      <AmbientBackground />
-      <ParticleField />
-      <CustomCursor />
-      <PointerEffects />
 
       <Navbar />
       <div className="dashboard-body">
