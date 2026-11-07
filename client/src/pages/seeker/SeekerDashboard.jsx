@@ -101,11 +101,28 @@ export default function SeekerDashboard() {
 
                 {(req.status === "accepted" || req.status === "referred") && (
                   <button
-                    onClick={() => setChatRequestId(req._id)}
+                    onClick={() =>
+                      setChatRequestId(chatRequestId === req._id ? null : req._id)
+                    }
                     style={{ backgroundColor: "#2f855a", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
                   >
-                    Open chat
+                    {chatRequestId === req._id ? "Close chat" : "Open chat"}
                   </button>
+                )}
+
+                {/* The chat opens inside the request it belongs to.
+                    It used to render in a "Live Support Chat" panel at the
+                    very bottom of the page - about 6,000px down with this
+                    many requests - so clicking "Open chat" looked like it
+                    did nothing at all. */}
+                {chatRequestId === req._id && (
+                  <div style={{ marginTop: "14px" }}>
+                    <ChatWindow
+                      requestId={req._id}
+                      currentUserId={currentUserId}
+                      title={`Chat - ${req._id ? `REQ-${req._id.slice(-5).toUpperCase()}` : req.id} - ${req.category || "support"}`}
+                    />
+                  </div>
                 )}
 
                 {/* T18.9 - a consultation room exists only once a psychologist
@@ -134,23 +151,15 @@ export default function SeekerDashboard() {
         )}
       </div>
 
+      {/* The chat itself now lives in the request it belongs to, above. This
+          panel only explains where to find it. */}
       <div style={{ backgroundColor: "#fff", padding: "24px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
         <h3 style={{ marginTop: 0, color: "#2d3748", fontSize: "18px", marginBottom: "8px" }}>Live Support Chat</h3>
-        <p style={{ color: "#718096", fontSize: "14px", marginBottom: "16px" }}>
-          Connect directly with an assigned volunteer or psychologist.
+        <p style={{ color: "#718096", fontSize: "14px", margin: 0 }}>
+          Once a volunteer accepts a request, an <strong>Open chat</strong> button
+          appears on it above. The conversation opens inside that request, so you
+          can always see which one you are talking about.
         </p>
-
-        {chatRequestId ? (
-          <ChatWindow
-            requestId={chatRequestId}
-            currentUserId={currentUserId}
-            title="Chat with your volunteer"
-          />
-        ) : (
-          <p style={{ color: "#718096", fontSize: "14px" }}>
-            Chat opens after a volunteer accepts your request. Click "Open chat" on an accepted request above.
-          </p>
-        )}
       </div>
     </div>
   );
