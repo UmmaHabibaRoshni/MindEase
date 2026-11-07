@@ -26,7 +26,7 @@ export default function ChatWindow({ requestId, currentUserId, title = "Support 
   const [status, setStatus] = useState("connecting"); // connecting | ready | error
   const [error, setError] = useState("");
   const socketRef = useRef(null);
-  const bottomRef = useRef(null);
+  const listRef = useRef(null);
 
   useEffect(() => {
     if (!requestId) return undefined;
@@ -87,8 +87,21 @@ export default function ChatWindow({ requestId, currentUserId, title = "Support 
     };
   }, [requestId]);
 
+  // Keep the newest message in view WITHOUT moving the page.
+  //
+  // scrollIntoView walks every scrollable ancestor, the window included, so
+  // each arriving message yanked the whole dashboard down to the chat - which
+  // is most of why the layout seemed to jump up and down. Scrolling the
+  // message list itself keeps the page exactly where the reader left it.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = listRef.current;
+    if (!list) return;
+    // only follow along if they are already near the bottom; otherwise they
+    // are reading back through the history and should not be dragged away
+    const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
+    if (nearBottom) {
+      list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+    }
   }, [messages]);
 
   const handleSend = (e) => {
@@ -153,10 +166,12 @@ export default function ChatWindow({ requestId, currentUserId, title = "Support 
 
       {/* Messages */}
       <div
+        ref={listRef}
         style={{
           flex: 1,
           padding: "20px",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           backgroundColor: "#f7faf8",
           display: "flex",
           flexDirection: "column",
@@ -175,7 +190,6 @@ export default function ChatWindow({ requestId, currentUserId, title = "Support 
             isOwnMessage={String(m.sender) === String(currentUserId)}
           />
         ))}
-        <div ref={bottomRef} />
       </div>
 
       {status === "ready" && error && (
