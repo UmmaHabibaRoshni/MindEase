@@ -6,12 +6,24 @@ import ReferNgoPanel from "../../components/referral/ReferNgoPanel";
 import EscalatePanel from "../../components/escalation/EscalatePanel";
 import { getUserIdFromToken } from "../../utils/getUserId";
 
+// Same short reference the seeker sees on their own dashboard, so the two
+// sides of a conversation can name the case the same way.
+const refOf = (r) => (r?._id ? `REQ-${String(r._id).slice(-5).toUpperCase()}` : "REQ-?????");
+
 const card = {
   border: "1px solid #ddd",
   borderRadius: 8,
   padding: "1rem",
   marginBottom: "1rem",
   background: "#fff",
+};
+
+const caseRef = {
+  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: "0.04em",
+  color: "#2f6b3a",
 };
 
 const referredBadge = {
@@ -89,18 +101,21 @@ export default function VolunteerDashboard() {
   };
 
   // called by ReferNgoPanel after a successful referral
-  const handleReferred = async () => {
+  // Both confirmations name the case. They appear at the top of the page,
+  // far from the card that was acted on, so "Referral sent." on its own left
+  // you guessing which of your open cases had just moved.
+  const handleReferred = async (r) => {
     setReferRequestId(null);
     setError("");
-    setMessage("Referral sent. The seeker and the NGO have been notified.");
+    setMessage(`${refOf(r)} referred to the NGO. The seeker has been notified.`);
     await loadAccepted(); // the case now comes back as "referred"
   };
 
   // called by EscalatePanel after a successful referral to a psychologist
-  const handleEscalated = async () => {
+  const handleEscalated = async (r) => {
     setEscalateRequestId(null);
     setError("");
-    setMessage("Case referred to the psychologist.");
+    setMessage(`${refOf(r)} referred to the psychologist.`);
     await loadAccepted(); // the case now comes back as "escalated"
   };
 
@@ -117,6 +132,7 @@ export default function VolunteerDashboard() {
       {accepted.length === 0 && <p>No accepted cases yet.</p>}
       {accepted.map((r) => (
         <div key={r._id} style={card}>
+          <code style={caseRef}>{refOf(r)}</code>{" "}
           <strong>{r.category}</strong> - Urgency: {r.urgency}{" "}
           {r.status === "referred" && <span style={referredBadge}>Referred</span>}
           {r.status === "escalated" && <span style={escalatedBadge}>Escalated</span>}
@@ -124,7 +140,11 @@ export default function VolunteerDashboard() {
           <small>Submitted: {new Date(r.createdAt).toLocaleDateString()}</small>
 
           <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
-            <button onClick={() => setChatRequestId(r._id)}>Open chat</button>
+            <button
+              onClick={() => setChatRequestId(chatRequestId === r._id ? null : r._id)}
+            >
+              {chatRequestId === r._id ? "Close chat" : "Open chat"}
+            </button>
             {r.status === "accepted" && (
               <>
                 <button
@@ -152,28 +172,33 @@ export default function VolunteerDashboard() {
               <ReferNgoPanel
                 requestId={r._id}
                 defaultCategory={r.category}
-                onReferred={handleReferred}
+                onReferred={() => handleReferred(r)}
               />
             </div>
           )}
 
           {escalateRequestId === r._id && (
             <div style={{ marginTop: "1rem", borderTop: "1px solid #eee", paddingTop: "1rem" }}>
-              <EscalatePanel requestId={r._id} onEscalated={handleEscalated} />
+              <EscalatePanel requestId={r._id} onEscalated={() => handleEscalated(r)} />
+            </div>
+          )}
+
+          {/* The chat belongs to this case, so it lives inside this case.
+              It used to render once at the bottom of the whole list with the
+              fixed title "Chat with the seeker" - so with more than one case
+              open there was nothing on screen saying which conversation you
+              were reading, and referring a case scrolled you away from it. */}
+          {chatRequestId === r._id && (
+            <div style={{ marginTop: "1rem" }}>
+              <ChatWindow
+                requestId={r._id}
+                currentUserId={currentUserId}
+                title={`Chat - ${refOf(r)} - ${r.category}`}
+              />
             </div>
           )}
         </div>
       ))}
-
-      {chatRequestId && (
-        <div style={{ margin: "1rem 0 2rem" }}>
-          <ChatWindow
-            requestId={chatRequestId}
-            currentUserId={currentUserId}
-            title="Chat with the seeker"
-          />
-        </div>
-      )}
 
       <h2>Pending requests</h2>
       <p>Pending support requests you can accept.</p>

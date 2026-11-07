@@ -918,6 +918,31 @@ body.me-intro-running .navbar-brand {
   animation: none !important;
 }
 
+/* A surface inside another surface must not drift on its own.
+   The chat is the case that exposed this: its panel, its message list and
+   its input bar are three nested white/grey boxes, so all three matched the
+   float selectors and each drifted on a different cycle. Nested together
+   that does not read as floating, it reads as the layout coming apart. */
+.me-app [style*="background-color: rgb(255, 255, 255)"] [style*="background-color: rgb(255, 255, 255)"],
+.me-app [style*="background-color: rgb(255, 255, 255)"] [style*="background: rgb(255, 255, 255)"],
+.me-app [style*="background-color: rgb(255, 255, 255)"] [style*="background-color: rgb(247, 250, 248)"],
+.me-app [style*="background: rgb(255, 255, 255)"] [style*="background-color: rgb(255, 255, 255)"],
+.me-app [style*="background: rgb(255, 255, 255)"] [style*="background-color: rgb(247, 250, 248)"] {
+  animation: none !important;
+}
+
+/* Nor does anything you type into. A panel holding a form or a message box
+   is somewhere you aim a cursor and read as you write; it has to hold
+   still, however alive the rest of the page is. */
+.me-app [style*="background-color: rgb(255, 255, 255)"]:has(form),
+.me-app [style*="background-color: rgb(255, 255, 255)"]:has(textarea),
+.me-app [style*="background: rgb(255, 255, 255)"]:has(form),
+.me-app [style*="background: rgb(255, 255, 255)"]:has(textarea),
+.me-app .me-card:has(form),
+.me-app article:has(form) {
+  animation: none !important;
+}
+
 /* ------------------------------------------------------ page transitions */
 
 /* Every route change lifts its content in out of a blur, so navigating feels
